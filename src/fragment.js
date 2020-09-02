@@ -2,15 +2,21 @@ import {findDiffStart, findDiffEnd} from "./diff"
 
 // ::- A fragment represents a node's collection of child nodes.
 //
+// @cn 一个 fragment 表示了节点的子节点集合。
+//
 // Like nodes, fragments are persistent data structures, and you
 // should not mutate them or their content. Rather, you create new
 // instances whenever needed. The API tries to make this easy.
+// 
+// @cn 像 nodes 一样，fragment 也是一个持久化数据结构，你不应该直接修改他们或者他们的内容，而应该创建一个新的实例。下面的 API 就是用来试图将这件事变得容易。
 export class Fragment {
   constructor(content, size) {
     this.content = content
     // :: number
     // The size of the fragment, which is the total of the size of its
     // content nodes.
+    // 
+    // @cn fragment 的大小，也即它的内容节点大小的总和。
     this.size = size || 0
     if (size == null) for (let i = 0; i < content.length; i++)
       this.size += content[i].nodeSize
@@ -20,6 +26,8 @@ export class Fragment {
   // Invoke a callback for all descendant nodes between the given two
   // positions (relative to start of this fragment). Doesn't descend
   // into a node when the callback returns `false`.
+  // 
+  // @cn 对相对于 fragment 开始位置的两个位置范围内的节点调用 `f` 回调。如果某个节点的回调返回 `false`，则不会对该节点的内部节点再调用该回调了。
   nodesBetween(from, to, f, nodeStart = 0, parent) {
     for (let i = 0, pos = 0; pos < to; i++) {
       let child = this.content[i], end = pos + child.nodeSize
@@ -36,6 +44,8 @@ export class Fragment {
   // :: ((node: Node, pos: number, parent: Node) → ?bool)
   // Call the given callback for every descendant node. The callback
   // may return `false` to prevent traversal of a given node's children.
+  // 
+  // @cn 对所有的后代元素递归调用给定的回调。如果某个节点回调返回 `false` 表示阻止再对该节点的子节点调用回调。
   descendants(f) {
     this.nodesBetween(0, this.size, f)
   }
@@ -61,6 +71,8 @@ export class Fragment {
   // :: (Fragment) → Fragment
   // Create a new fragment containing the combined content of this
   // fragment and the other.
+  //
+  // @cn 创建一个包含当前 fragment 内容和给定 fragment 内容的新的 fragment。
   append(other) {
     if (!other.size) return this
     if (!this.size) return other
@@ -75,6 +87,8 @@ export class Fragment {
 
   // :: (number, ?number) → Fragment
   // Cut out the sub-fragment between the two given positions.
+  //
+  // @cn 从 fragment 剪切出给定范围的一个子 fragment。
   cut(from, to) {
     if (to == null) to = this.size
     if (from == 0 && to == this.size) return this
@@ -105,6 +119,8 @@ export class Fragment {
   // :: (number, Node) → Fragment
   // Create a new fragment in which the node at the given index is
   // replaced by the given node.
+  // 
+  // @cn 将 fragment 中的给定 index 位置的节点用给定节点替换掉后，创建一个新的 fragment。
   replaceChild(index, node) {
     let current = this.content[index]
     if (current == node) return this
@@ -117,6 +133,8 @@ export class Fragment {
   // : (Node) → Fragment
   // Create a new fragment by prepending the given node to this
   // fragment.
+  // 
+  // @cn 将给定的节点添加到 fragment 起始位置后，返回得到的新的 fragment。
   addToStart(node) {
     return new Fragment([node].concat(this.content), this.size + node.nodeSize)
   }
@@ -124,12 +142,18 @@ export class Fragment {
   // : (Node) → Fragment
   // Create a new fragment by appending the given node to this
   // fragment.
+  // 
+  // @cn 将给定的节点添加到 fragment 的末尾位置后，返回得到的新的 fragment。
   addToEnd(node) {
     return new Fragment(this.content.concat(node), this.size + node.nodeSize)
   }
 
   // :: (Fragment) → bool
   // Compare this fragment to another one.
+  // 
+  // @cn 将当前 fragment 与另一个 fragment 比较，看是否相等。。
+  //
+  // @comment 先比较 fragment 的内容大小，再逐个对内容节点调用节点的 eq 方法进行比较，一旦发现不一样的则返回 false，否则返回 true。
   eq(other) {
     if (this.content.length != other.content.length) return false
     for (let i = 0; i < this.content.length; i++)
@@ -139,19 +163,27 @@ export class Fragment {
 
   // :: ?Node
   // The first child of the fragment, or `null` if it is empty.
+  //
+  // @cn 返回当前 fragment 的第一个子节点，如果是空则为 `null`。
   get firstChild() { return this.content.length ? this.content[0] : null }
 
   // :: ?Node
   // The last child of the fragment, or `null` if it is empty.
+  //
+  // @cn 返回当前 fragment 的最后一个节点，如果是空则为 `null`。
   get lastChild() { return this.content.length ? this.content[this.content.length - 1] : null }
 
   // :: number
   // The number of child nodes in this fragment.
+  //
+  // @cn 当前 fragment 的子节点数量。
   get childCount() { return this.content.length }
 
   // :: (number) → Node
   // Get the child node at the given index. Raise an error when the
   // index is out of range.
+  // 
+  // @cn 获取 fragment 在给定 index 的子节点。如果 index 超出范围则抛出一个错误。
   child(index) {
     let found = this.content[index]
     if (!found) throw new RangeError("Index " + index + " out of range for " + this)
@@ -160,6 +192,8 @@ export class Fragment {
 
   // :: (number) → ?Node
   // Get the child node at the given index, if it exists.
+  //
+  // @cn 获取给定 index 的子节点，如果存在的话。
   maybeChild(index) {
     return this.content[index]
   }
@@ -167,6 +201,8 @@ export class Fragment {
   // :: ((node: Node, offset: number, index: number))
   // Call `f` for every child node, passing the node, its offset
   // into this parent node, and its index.
+  // 
+  // @cn 为每一个子节点调用 `f` 函数，参数是子节点、子节点相对于当前节点的偏移、以及子节点的 index。
   forEach(f) {
     for (let i = 0, p = 0; i < this.content.length; i++) {
       let child = this.content[i]
@@ -178,6 +214,8 @@ export class Fragment {
   // :: (Fragment) → ?number
   // Find the first position at which this fragment and another
   // fragment differ, or `null` if they are the same.
+  // 
+  // @cn 寻找当前 fragment 和给定 fragment 的第一个不同的位置，如果它们相同的话返回 `null`。
   findDiffStart(other, pos = 0) {
     return findDiffStart(this, other, pos)
   }
@@ -187,6 +225,11 @@ export class Fragment {
   // fragment and the given fragment differ, or `null` if they are the
   // same. Since this position will not be the same in both nodes, an
   // object with two separate positions is returned.
+  // 
+  // @cn 从后往前搜索，寻找当前 fragment 和给定 fragment 的第一个不同的位置，如果相同则返回 `null`。
+  // 因为该位置在两个节点中可能是不同的，因此该函数返回的是一个对象，带有两个不同的位置。
+  // 
+  // @comment 对象是 {a: number, b: number}。
   findDiffEnd(other, pos = this.size, otherPos = other.size) {
     return findDiffEnd(this, other, pos, otherPos)
   }
