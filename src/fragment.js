@@ -254,18 +254,24 @@ export class Fragment {
 
   // :: () → string
   // Return a debugging string that describes this fragment.
+  //
+  // @cn 返回一个用来 debug 的 string 以描述该 fragment。
   toString() { return "<" + this.toStringInner() + ">" }
 
   toStringInner() { return this.content.join(", ") }
 
   // :: () → ?Object
   // Create a JSON-serializeable representation of this fragment.
+  //
+  // @cn 返回该 fragment 序列化后的 JSON 表示。
   toJSON() {
     return this.content.length ? this.content.map(n => n.toJSON()) : null
   }
 
   // :: (Schema, ?Object) → Fragment
   // Deserialize a fragment from its JSON representation.
+  // 
+  // 从该 fragment 的 JSON 表示中反序列化（parse）一个 fragment。
   static fromJSON(schema, value) {
     if (!value) return Fragment.empty
     if (!Array.isArray(value)) throw new RangeError("Invalid input for Fragment.fromJSON")
@@ -275,6 +281,8 @@ export class Fragment {
   // :: ([Node]) → Fragment
   // Build a fragment from an array of nodes. Ensures that adjacent
   // text nodes with the same marks are joined together.
+  // 
+  // @cn 用一个节点数组构建一个 fragment。带有相同 marks 的相邻文本节点会被合并到一起。
   static fromArray(array) {
     if (!array.length) return Fragment.empty
     let joined, size = 0
@@ -296,6 +304,9 @@ export class Fragment {
   // of nodes. For `null`, it returns the empty fragment. For a
   // fragment, the fragment itself. For a node or array of nodes, a
   // fragment containing those nodes.
+  //
+  // @cn 用给定的类节点集合的对象中创建一个 fragment。如果是 `null` 则返回空 fragment。
+  // 如果是 fragment 则返回该 fragment 自身。如果是一个节点或者一个节点数组，则返回一个包含这些节点的 fragment。
   static from(nodes) {
     if (!nodes) return Fragment.empty
     if (nodes instanceof Fragment) return nodes
@@ -317,4 +328,6 @@ function retIndex(index, offset) {
 // An empty fragment. Intended to be reused whenever a node doesn't
 // contain anything (rather than allocating a new empty fragment for
 // each leaf node).
+// 
+// @cn 一个空的 fragment。没有包含任何节点的 fragment 都指向该对象（而不是为每个 fragment 都创建一个空的 fragment）。
 Fragment.empty = new Fragment([], 0)
