@@ -43,18 +43,27 @@ function initAttrs(attrs) {
 // [tag](#model.Node.type) `Node` instances. They contain information
 // about the node type, such as its name and what kind of node it
 // represents.
+//
+// @cn 每个 Node Type 只会被 Schema 初始化一次，然后使用它来[tag（归类）](#model.Node.type) `Node` 的实例。
+// 这种对象包含了节点的类型信息，比如名称以及它表示那种节点。
 export class NodeType {
   constructor(name, schema, spec) {
     // :: string
     // The name the node type has in this schema.
+    //
+    // @cn 该节点类型在 schema 中的名称。
     this.name = name
 
     // :: Schema
     // A link back to the `Schema` the node type belongs to.
+    //
+    // @cn 一个指向节点类型所属 `Schema` 的指针。
     this.schema = schema
 
     // :: NodeSpec
     // The spec that this type is based on
+    //
+    // @cn 当前类型的配置对象。
     this.spec = spec
 
     this.groups = spec.group ? spec.group.split(" ") : []
@@ -64,46 +73,80 @@ export class NodeType {
 
     // :: ContentMatch
     // The starting match of the node type's content expression.
+    //
+    // @cn 节点类型内容表达式的起始匹配。
+    //
+    // @comment sorry，这个 contentMatch 我用的比较少，所以也不知道是什么意思，貌似源码内部使用的比较多。
     this.contentMatch = null
 
     // : ?[MarkType]
     // The set of marks allowed in this node. `null` means all marks
     // are allowed.
+    //
+    // @cn 该节点允许出现的 marks 集合。`null` 意味着允许所有的 marks。
     this.markSet = null
 
     // :: bool
     // True if this node type has inline content.
+    //
+    // @cn 如果当前节点类型有内联内容的话，即为 true。
     this.inlineContent = null
 
     // :: bool
     // True if this is a block type
+    //
+    // @cn 当前节点是块级类型的话，即为 true。
+    //
+    // @comment 判断是否是块级类型是用排除法，如果不是内联类型（即 spec.inline 是 false）且节点类型的名称不是「text」，则该类型是块级类型。
     this.isBlock = !(spec.inline || name == "text")
 
     // :: bool
     // True if this is the text node type.
+    //
+    // @cn 如果是文本类型的节点，即为 true。
+    //
+    // @comment 也即节点名字是「text」。
     this.isText = name == "text"
   }
 
   // :: bool
   // True if this is an inline type.
+  //
+  // @cn 如果是一个内联类型，则为 true。
+  //
+  // @comment 同样使用排除法，即与 spec.isBlock 互斥。
   get isInline() { return !this.isBlock }
 
   // :: bool
   // True if this is a textblock type, a block that contains inline
   // content.
+  //
+  // @cn 如果节点是文本块类型节点则为 true，即一个包含内联内容的块级类型节点。
+  //
+  // @comment 一个块级类型可能包含另一个块级类型，一个文本块类型则只会包含内联内容，哪些节点是内联元素由 schema 决定。
+  //
+  // @comment 文本块类型的判断需要同时满足 spec.isBlock 和 spec.inlineContent 同时为 true。
   get isTextblock() { return this.isBlock && this.inlineContent }
 
   // :: bool
   // True for node types that allow no content.
+  //
+  // @cn 如果节点不允许内容，则为 true。
+  //
+  // @comment 是否是叶节点使用的是 spec.contentMatch 是否为空判断的。
   get isLeaf() { return this.contentMatch == ContentMatch.empty }
 
   // :: bool
   // True when this node is an atom, i.e. when it does not have
   // directly editable content.
+  //
+  // @cn 如果节点是一个原子节点则为 true，例如，一个没有直接可编辑的内容的节点。
   get isAtom() { return this.isLeaf || this.spec.atom }
 
   // :: () → bool
   // Tells you whether this node type has any required attributes.
+  //
+  // @cn 告诉你该节点类型是否有任何必须的 attributes。
   hasRequiredAttrs() {
     for (let n in this.attrs) if (this.attrs[n].isRequired) return true
     return false
@@ -125,6 +168,9 @@ export class NodeType {
   // may be a `Fragment`, a node, an array of nodes, or
   // `null`. Similarly `marks` may be `null` to default to the empty
   // set of marks.
+  //
+  // @cn 新建一个此种类型的节点。将会检查给定的 attributes，未给定的话即为默认值（如果该中类型的节点没有任何必须的 attributes，你可以直接传递 `null` 来使用全部 attributes 的默认值）。
+  // `content` 可能是一个 `Fragment`、一个节点、一个节点数组或者 `null`。`marks` 参数与之类似，默认是 `null`，表示空的 marks 集合。
   create(attrs, content, marks) {
     if (this.isText) throw new Error("NodeType.create can't construct text nodes")
     return new Node(this, this.computeAttrs(attrs), Fragment.from(content), Mark.setFrom(marks))
@@ -134,6 +180,10 @@ export class NodeType {
   // Like [`create`](#model.NodeType.create), but check the given content
   // against the node type's content restrictions, and throw an error
   // if it doesn't match.
+  //
+  // @cn 与 [`create`](#model.NodeType.create) 类似，但是会检查给定的 content 是否符合节点类型的内容限制，如果不符的话会抛出一个错误。
+  //
+  // @comment 该自定义错误类型为 RangeError。
   createChecked(attrs, content, marks) {
     content = Fragment.from(content)
     if (!this.validContent(content))
