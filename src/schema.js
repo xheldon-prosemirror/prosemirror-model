@@ -198,6 +198,12 @@ export class NodeType {
   // Note that, due to the fact that required nodes can always be
   // created, this will always succeed if you pass null or
   // `Fragment.empty` as content.
+  //
+  // @cn 和 [`create`](#model.NodeType.create) 类似，不过该方法会查看是否有必要在给定的 fragment 开始和结尾的地方
+  // 添加一些节点，以让该 fragment 适应当前 node。如果没有找到合适的包裹节点，则返回 null。
+  // 记住，如果你传递 `null` 或者 `Fragment.empty` 作为内容会导致其一定会适合当前 node，因此该方法一定会成功。
+  //
+  // @comment 因为 `null` 和 `Fragment.empty` 不用寻找任何「合适的包裹节点」就能适应当前节点。
   createAndFill(attrs, content, marks) {
     attrs = this.computeAttrs(attrs)
     content = Fragment.from(content)
@@ -214,6 +220,8 @@ export class NodeType {
   // :: (Fragment) → bool
   // Returns true if the given fragment is valid content for this node
   // type with the given attributes.
+  //
+  // @cn 如果给定的 fragment 对当前带有 attributes 的节点是可用的，则返回 true。
   validContent(content) {
     let result = this.contentMatch.matchFragment(content)
     if (!result || !result.validEnd) return false
@@ -224,12 +232,16 @@ export class NodeType {
 
   // :: (MarkType) → bool
   // Check whether the given mark type is allowed in this node.
+  //
+  // @cn 检查当前节点类型是否允许给定的 mark 类型。
   allowsMarkType(markType) {
     return this.markSet == null || this.markSet.indexOf(markType) > -1
   }
 
   // :: ([Mark]) → bool
   // Test whether the given set of marks are allowed in this node.
+  //
+  // @cn 检查当前节点类型是否允许给定的 marks 集合。
   allowsMarks(marks) {
     if (this.markSet == null) return true
     for (let i = 0; i < marks.length; i++) if (!this.allowsMarkType(marks[i].type)) return false
@@ -238,6 +250,8 @@ export class NodeType {
 
   // :: ([Mark]) → [Mark]
   // Removes the marks that are not allowed in this node from the given set.
+  //
+  // @cn 从给定的 marks 集合中移除不允许出现在当前 node 中的 marks。
   allowedMarks(marks) {
     if (this.markSet == null) return marks
     let copy
@@ -283,18 +297,27 @@ class Attribute {
 // things like emphasis or being part of a link) are
 // [tagged](#model.Mark.type) with type objects, which are
 // instantiated once per `Schema`.
+//
+// @cn 和 nodes 类似，marks（与 node 关联的以表示诸如强调、链接等的内容）也被用类型对象进行 [tagged（归类）](#model.Mark.type)，
+// 每个类型只会被 `Schema` 实例化一次。
 export class MarkType {
   constructor(name, rank, schema, spec) {
     // :: string
     // The name of the mark type.
+    //
+    // @cn mark 类型的名称。
     this.name = name
 
     // :: Schema
     // The schema that this mark type instance is part of.
+    //
+    // @cn 当前 mark 类型所属于的 schema。
     this.schema = schema
 
     // :: MarkSpec
     // The spec on which the type is based.
+    //
+    // @cn 当前 mark 类型的配置对象。
     this.spec = spec
 
     this.attrs = initAttrs(spec.attrs)
@@ -309,6 +332,9 @@ export class MarkType {
   // Create a mark of this type. `attrs` may be `null` or an object
   // containing only some of the mark's attributes. The others, if
   // they have defaults, will be added.
+  //
+  // @cn 创建一个当前类型的 mark。`attrs` 可能是 `null` 或者是一个仅包含部分 marks attributes 的对象。
+  // 其他未包含的 attributes，会使用它们的默认值添加上去。
   create(attrs) {
     if (!attrs && this.instance) return this.instance
     return new Mark(this, computeAttrs(this.attrs, attrs))
@@ -323,6 +349,11 @@ export class MarkType {
   // :: ([Mark]) → [Mark]
   // When there is a mark of this type in the given set, a new set
   // without it is returned. Otherwise, the input set is returned.
+  //
+  // @cn 如果当前 mark 类型存在与给定的 mark 集合，则将会返回不含有当前 mark 类型的 marks 集合。
+  // 否则，直接返回给定的 marks 集合。
+  //
+  // @comment 看函数名，顾名思义就是在给定 marks 集合中移除当前 mark 类型的 marks。
   removeFromSet(set) {
     for (var i = 0; i < set.length; i++)
       if (set[i].type == this)
@@ -332,6 +363,8 @@ export class MarkType {
 
   // :: ([Mark]) → ?Mark
   // Tests whether there is a mark of this type in the given set.
+  //
+  // @cn 检查当前类型的 marks 是否存在于给定 marks 集合。
   isInSet(set) {
     for (let i = 0; i < set.length; i++)
       if (set[i].type == this) return set[i]
@@ -340,6 +373,8 @@ export class MarkType {
   // :: (MarkType) → bool
   // Queries whether a given mark type is
   // [excluded](#model.MarkSpec.excludes) by this one.
+  //
+  // @cn 查询给定的 mark 类型是否与当前 mark 类型 [excluded（互斥）](#model.MarkSpec.excludes)
   excludes(other) {
     return this.excluded.indexOf(other) > -1
   }
@@ -349,6 +384,10 @@ export class MarkType {
 // An object describing a schema, as passed to the [`Schema`](#model.Schema)
 // constructor.
 //
+// @cn 一个描述 schema 的对象，用来传递给 [`Schema`](#model.Schema) 构造函数
+//
+// @comment 就是 schema 的配置对象，ProseMirror 中的 xxxSpec 都是 xxx 的配置对象，如 NodeSpec、MarkSpec 等。
+//
 //   nodes:: union<Object<NodeSpec>, OrderedMap<NodeSpec>>
 //   The node types in this schema. Maps names to
 //   [`NodeSpec`](#model.NodeSpec) objects that describe the node type
@@ -357,15 +396,24 @@ export class MarkType {
 //   precedence by default, and which nodes come first in a given
 //   [group](#model.NodeSpec.group).
 //
+//   @cn 当前 schema 中所有的 node 类型的对象。对象中，键是节点名，对象的键是对应的 [`NodeSpec`](#model.NodeSpec)。
+//   节点们在该对象中出现的先后顺序是非常重要的，它决定了默认情况下哪个节点的 [parse rules](#model.NodeSpec.parseDOM) 优先进行，
+//   以及哪个节点是一个 group 优先考虑的节点。
+//
 //   marks:: ?union<Object<MarkSpec>, OrderedMap<MarkSpec>>
 //   The mark types that exist in this schema. The order in which they
 //   are provided determines the order in which [mark
 //   sets](#model.Mark.addToSet) are sorted and in which [parse
 //   rules](#model.MarkSpec.parseDOM) are tried.
 //
+//   @cn 当前 schema 中的所有 mark 类型的对象。它们出现的顺序决定了在 [mark
+//   sets](#model.Mark.addToSet) 中的存储顺序，以及 [parse rules](#model.MarkSpec.parseDOM) 的处理顺序。
+//
 //   topNode:: ?string
 //   The name of the default top-level node for the schema. Defaults
 //   to `"doc"`.
+//
+//   @cn 当前 schema 顶级节点的名字，默认是 `"doc"`。
 
 // NodeSpec:: interface
 //
@@ -374,6 +422,11 @@ export class MarkType {
 //   guide](/docs/guide/#schema.content_expressions). When not given,
 //   the node does not allow any content.
 //
+//   @cn 就像在 [schema guide](https://www.xheldon.com/prosemirror-guide-chinese.html) 中描述的一样，为当前节点的内容表达式。
+//   如果没有给定，则该节点不允许任何内容。
+//
+//   @comment schema guide 链接指向中文翻译指南，请搜索 Schema 下的 Content Expressions 一节。
+//
 //   marks:: ?string
 //   The marks that are allowed inside of this node. May be a
 //   space-separated string referring to mark names or groups, `"_"`
@@ -381,34 +434,58 @@ export class MarkType {
 //   not given, nodes with inline content default to allowing all
 //   marks, other nodes default to not allowing marks.
 //
+//   @cn 当前节点允许的 marks 类型。可能是一个空格分隔的字符串，内容是 mark 的名字或者 group 名。
+//   `"_"` 表示明确允许所有的 marks，或者 `""` 表示禁止所有的 marks。如果没有设置该字段，则节点含有的内联内容将会默认允许所有的 marks，
+//   其他不含内联内容的节点将默认不允许所有的 marks。
+//
 //   group:: ?string
 //   The group or space-separated groups to which this node belongs,
 //   which can be referred to in the content expressions for the
 //   schema.
 //
+//   @cn 当前节点所属的 group，可以出现多个，用空格分隔，可以指向当前 schema 的内容表达式（content expressions）。
+//
 //   inline:: ?bool
 //   Should be set to true for inline nodes. (Implied for text nodes.)
+//
+//   @cn 对于内联节点，应该被设置为 true（文本节点隐式的被设置为 true）。
 //
 //   atom:: ?bool
 //   Can be set to true to indicate that, though this isn't a [leaf
 //   node](#model.NodeType.isLeaf), it doesn't have directly editable
 //   content and should be treated as a single unit in the view.
 //
+//   @cn 可以被设置为 true，以表示即使当前节点不是一个 [leaf node](#model.NodeType.isLeaf)，但是其也没有直接可编辑内容，
+//   因此在 view 中应该被当成是一个独立的单位对待。
+//
+//   @comment 「独立单位对待」指的是，如在计数上，应该是 1；在事件上，内部元素触发的事件应该被视作是该节点触发的，等。
+//
 //   attrs:: ?Object<AttributeSpec>
 //   The attributes that nodes of this type get.
+//
+//   @cn 当前节点拿到的 attributes。
 //
 //   selectable:: ?bool
 //   Controls whether nodes of this type can be selected as a [node
 //   selection](#state.NodeSelection). Defaults to true for non-text
 //   nodes.
 //
+//   @cn 控制当前类型的节点是否能够被作为 [node selection](#state.NodeSelection) 所选中。
+//   对于非文本节点来说，默认是 true。
+//
 //   draggable:: ?bool
 //   Determines whether nodes of this type can be dragged without
 //   being selected. Defaults to false.
 //
+//   @cn 决定在未选中的情况下，当前类型的节点能否被拖拽。默认是 false。
+//
 //   code:: ?bool
 //   Can be used to indicate that this node contains code, which
 //   causes some commands to behave differently.
+//
+//   @cn 指示当前节点包含 code，其会引起一些命令有特别的行为。
+//
+//   @comment 「特别的行为」如，在 code 节点中的内容如果是 li 和 文档中的 li 是两个处理逻辑，前者针对 code 块处理；后者针对 li 进行处理。
 //
 //   defining:: ?bool
 //   Determines whether this node is considered an important parent
@@ -420,11 +497,28 @@ export class MarkType {
 //   non-default-paragraph textblock types, and possibly list items,
 //   are marked as defining.
 //
+//   @cn 决定当前节点是否在替换操作中被认为是一个重要的父级节点（如粘贴操作）。当节点的内容被整个替换掉的时候，
+//   若该节点的 defining 为 false（默认），则其会被移除，但是 defining 为 true 的节点会保留，然后包裹住替换进来的内容。
+//   同样地，对于 _插入的_ 内容，那些有着 defining 为 true 的父级节点会被尽可能的保留。一般来说，非默认段落的文本块节点类型及 li 元素，defining 应该是 true。
+//
+//   @comment 最有一句话讲的是，例如，默认的 paragraph 中，文本块节点，粘贴的时候应该直接替换掉它的父节点，也即另一个文本块。
+//   但是对非默认 paragraph（即你自己定制的 paragraph）的话，在替换内容的时候，就需要保留该 非默认 paragraph 的一些属性，不能直接替换。同理 li 元素，
+//   因为首先选中 li 元素内容，然后粘贴内容是一个很常见的操作，用户的预期是将粘贴内容作为 li 的内容，而不是直接替换掉 li 而粘贴成 paragraph（或其他 block）。
+//
 //   isolating:: ?bool
 //   When enabled (default is false), the sides of nodes of this type
 //   count as boundaries that regular editing operations, like
 //   backspacing or lifting, won't cross. An example of a node that
 //   should probably have this enabled is a table cell.
+//
+//   @cn 当该属性设置为 true 时（默认是 false），当前类型的节点的两侧将会计算作为边界，于是对于正常的编辑操作如删除、或者提升，将不会被跨越过去。
+//   举个例子，对于 table 的 cell 节点，该属性应该被设置为 true。
+//
+//   @comment 「提升」操作指的是，如在一个二级 li 中，一般用户习惯下，按 shift + tab 会将该二级 li 提升到一级 li。
+//
+//   @comment 「跨越」指的是，操作会跨过当前节点到达下一个（或者上一个）节点。如删除操作，在段落起始位置继续按删除键，光标会跑到上一个节点的尾部；
+//   在 li 起始位置按删除键，光标会跑到上一个 li 结尾处或者直接删除整个 ul/ol；但是在 table 的 td 中，在 td 起始位置按删除键跑到上一个 td 结尾，
+//   显然不是预期。
 //
 //   toDOM:: ?(node: Node) → DOMOutputSpec
 //   Defines the default way a node of this type should be serialized
@@ -435,10 +529,16 @@ export class MarkType {
 //   optional number zero (“hole”) in it to indicate where the node's
 //   content should be inserted.
 //
+//   @cn 定义当前节点的默认序列化成 DOM/HTML 的方式（被[`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)使用）。
+//   应该返回一个 DOM 节点或者一个描述 ODM 节点的 [array structure](#model.DOMOutputSpec)，它带有可选的数字 0 （就是「洞」），
+//   表示节点的内容应该被插在哪个位置。
+//
 //   For text nodes, the default is to create a text DOM node. Though
 //   it is possible to create a serializer where text is rendered
 //   differently, this is not supported inside the editor, so you
 //   shouldn't override that in your text node spec.
+//
+//   @cn 对于文本节点，默认是创建一个文本 DOM 节点。虽然创建序列化器以将文本节点特殊渲染是可能的，但是当前编辑器并不支持这样做，因此你不应该覆盖文本节点中的该方法。
 //
 //   parseDOM:: ?[ParseRule]
 //   Associates DOM parser information with this node, which can be
@@ -448,19 +548,32 @@ export class MarkType {
 //   If you supply your own parser, you do not need to also specify
 //   parsing rules in your schema.
 //
+//   @cn 当前节点相关的 DOM parser 信息，会被 [`DOMParser.fromSchema`](#model.DOMParser^fromSchema)
+//   使用以自动的衍生出一个 parser。Rule 中的 `node` 字段是隐式的（节点的名字会自动填充）。如果你在此处提供了自己的 parser，那你就不需要再在 schema 配置的时候提供 parser 了。
+//
+//  @comment  配置 Editor view 的时候可以配置一个个 Parser 和 Serializer，如果提供，则此处就不用写 parseDOM 了。
+//
 //   toDebugString:: ?(node: Node) -> string
 //   Defines the default way a node of this type should be serialized
 //   to a string representation for debugging (e.g. in error messages).
+//
+//   @cn 定义一个该类型节点被序列化成一个字符串形式的默认方法，以做 debugging 用途。
 
 // MarkSpec:: interface
 //
 //   attrs:: ?Object<AttributeSpec>
 //   The attributes that marks of this type get.
 //
+//   @cn 当前 mark 类型拿到的 attributes。
+//
 //   inclusive:: ?bool
 //   Whether this mark should be active when the cursor is positioned
 //   at its end (or at its start when that is also the start of the
 //   parent node). Defaults to true.
+//
+//   @cn 当光标放到该 mark 的结尾处（或者如果该 mark 开始处同样是父级节点的开始处时，放到 mark 的开始处）时，该 marks 是否应该被激活。默认是 true/
+//
+//   @comment 「被激活」的意思是，可以通过 API 获取光标所在的 resolvedPos 信息以查到相关的 marks。
 //
 //   excludes:: ?string
 //   Determines which other marks this mark can coexist with. Should
@@ -471,7 +584,7 @@ export class MarkType {
 //   by the new mark, the mark can not be added an the set. You can
 //   use the value `"_"` to indicate that the mark excludes all
 //   marks in the schema.
-//
+//  
 //   Defaults to only being exclusive with marks of the same type. You
 //   can set it to an empty string (or any string not containing the
 //   mark's own name) to allow multiple marks of a given type to
