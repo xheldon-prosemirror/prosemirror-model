@@ -584,7 +584,7 @@ export class MarkType {
 //   by the new mark, the mark can not be added an the set. You can
 //   use the value `"_"` to indicate that the mark excludes all
 //   marks in the schema.
-//  
+//
 //   Defaults to only being exclusive with marks of the same type. You
 //   can set it to an empty string (or any string not containing the
 //   mark's own name) to allow multiple marks of a given type to
