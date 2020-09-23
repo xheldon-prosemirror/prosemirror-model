@@ -7,10 +7,15 @@ import {Mark} from "./mark"
 // [`parse`](#model.DOMParser.parse) and
 // [`parseSlice`](#model.DOMParser.parseSlice) methods.
 //
+// @cn 这是一个被 [`parse`](#model.DOMParser.parse) 和 [`parseSlice`](#model.DOMParser.parseSlice) 方法用到的参数配置对象。
+//
 //   preserveWhitespace:: ?union<bool, "full">
 //   By default, whitespace is collapsed as per HTML's rules. Pass
 //   `true` to preserve whitespace, but normalize newlines to
 //   spaces, and `"full"` to preserve whitespace entirely.
+//
+//   @cn 默认情况下，根据 HTML 的规则，空白符会被折叠起来不显示。传递 `true` 表示保留空白符，但会将换行符表示为空格。
+//   `"full"` 表示完全保留所有的空白符。
 //
 //   findPositions:: ?[{node: dom.Node, offset: number}]
 //   When given, the parser will, beside parsing the content,
@@ -19,11 +24,18 @@ import {Mark} from "./mark"
 //   that holds the document position. DOM positions that are not
 //   in the parsed content will not be written to.
 //
+//   @cn 如果设置了该参数，则 parser 除了 parsing 内容外，还将记录给定位置 DOM 在文档中相应的位置。
+//   它将通过写入对象，添加一个保存文档位置的 `pos` 属性来实现。不在 parsed 内容中的 DOM 的位置将不会被写入。
+//
 //   from:: ?number
 //   The child node index to start parsing from.
 //
+//   @cn 从开始 parsing 位置计算的子节点的索引。
+//
 //   to:: ?number
 //   The child node index to stop parsing at.
+//
+//   @cn 从结束 parsing 位置计算的子节点的索引。
 //
 //   topNode:: ?Node
 //   By default, the content is parsed into the schema's default
@@ -31,27 +43,40 @@ import {Mark} from "./mark"
 //   option to use the type and attributes from a different node
 //   as the top container.
 //
+//   @cn 默认情况下，内容会被 parsed 到 schema 的默认 [顶级节点](#model.Schema.topNodeType) 中。
+//   你可以传递这个选项和 attributes 以使用一个不同的节点作为顶级容器。
+//
 //   topMatch:: ?ContentMatch
 //   Provide the starting content match that content parsed into the
 //   top node is matched against.
+//
+//   @cn 提供与 parsed 到顶级节点的内容匹配的起始内容匹配。
 //
 //   context:: ?ResolvedPos
 //   A set of additional nodes to count as
 //   [context](#model.ParseRule.context) when parsing, above the
 //   given [top node](#model.ParseOptions.topNode).
+//
+//   @cn 在 parsing 的时候的一个额外的节点集合，其被算作给定 [top node](#model.ParseOptions.topNode) 之上的 [context](#model.ParseRule.context)。
 
 // ParseRule:: interface
 // A value that describes how to parse a given DOM node or inline
 // style as a ProseMirror node or mark.
 //
+// @cn 一个描述了如何 parse 给定 DOM 节点及行内样式成 ProseMirror 节点及 mark 的对象。
+//
 //   tag:: ?string
 //   A CSS selector describing the kind of DOM elements to match. A
 //   single rule should have _either_ a `tag` or a `style` property.
+//
+//   @cn 一个描述了需要匹配那种 DOM 元素的 CSS 选择器。每个 rule 都应该有一个 `tag` 属性 _或者_ `style` 属性。
 //
 //   namespace:: ?string
 //   The namespace to match. This should be used with `tag`.
 //   Nodes are only matched when the namespace matches or this property
 //   is null.
+//
+//   @cn 需要匹配的命名空间。应该和 `tag` 一起使用。只有命名空间匹配之后或者为 null 表示没有命名空间，才会开始匹配节点。
 //
 //   style:: ?string
 //   A CSS property name to match. When given, this rule matches
@@ -61,12 +86,20 @@ import {Mark} from "./mark"
 //   complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
 //   and return false to indicate that the match failed.)
 //
+//   @cn 需要匹配的 CSS 属性名。如果给定的话，这个 rule 将会匹配包含该属性的行内样式。
+//   也可以是 `"property=value"` 的形式，这种情况下 property 的值完全符合给定值时 rule 才会匹配。
+//   （对于更复杂的过滤方式，使用 [`getAttrs`](#model.ParseRule.getAttrs)，然后返回 false 表示匹配失败。）
+//
 //   priority:: ?number
 //   Can be used to change the order in which the parse rules in a
 //   schema are tried. Those with higher priority come first. Rules
 //   without a priority are counted as having priority 50. This
 //   property is only meaningful in a schema—when directly
 //   constructing a parser, the order of the rule array is used.
+//
+//   @cn 可以使用它来提升 schema 中 parse rule 的优先级顺序。更高优先级的更先被 parse。
+//   没有优先级设置的 rule 则被默认设置一个 50 的优先级。该属性只在 schema 中才有意义。
+//   而在直接构造一个 parser 的时候使用的是 rule 数组的顺序。
 //
 //   context:: ?string
 //   When given, restricts this rule to only match when the current
@@ -81,6 +114,11 @@ import {Mark} from "./mark"
 //   different contexts, they can be separated by a pipe (`|`)
 //   character, as in `"blockquote/|list_item/"`.
 //
+//   @cn 如果设置了该属性，则限制 rule 只匹配给定的上下文表达式，该上下文即为被 parsed 的内容所在的父级节点。
+//   应该包含一个或者多个节点名或者节点 group 名，用一个或者两个斜杠结尾。例如 `"paragraph/"` 表示只有当父级节点是段落的时候才会被匹配，
+//   `"blockquote/paragraph/"` 限制只有在一个 blockquote 中的一个段落中才会被匹配，`"section//"` 表示匹配在一个 section 中的任何位置--一个双斜线表示匹配
+//   任何祖先节点序列。为了允许多个不同的上下文，它们可以用 `|` 分隔，比如 `"blockquote/|list_item/"`。
+//
 //   node:: ?string
 //   The name of the node type to create when this rule matches. Only
 //   valid for rules with a `tag` property, not for style rules. Each
@@ -89,23 +127,37 @@ import {Mark} from "./mark"
 //   [mark spec](#model.MarkSpec.parseDOM), in which case the `node`
 //   or `mark` property will be derived from its position).
 //
+//   @cn 当 rule 匹配的时候，将要创建的节点类型的名字。仅对带有 `tag` 属性的 rules 可用，对样式 rule 无效。
+//   每个 rule 应该有 `node`、`mark`、`ignore` 属性的其中一个（除非是当 rule 出现在一个 [node](#model.NodeSpec.parseDOM) 或者
+//   [mark spec](#model.MarkSpec.parseDOM) 中时，在这种情况下，`node` 或者 `mark` 属性将会从它的位置推断出来）。
+//
 //   mark:: ?string
 //   The name of the mark type to wrap the matched content in.
 //
+//   @cn 包裹匹配内容的 mark 类型的名字。
+//
 //   ignore:: ?bool
 //   When true, ignore content that matches this rule.
+//
+//   @cn 如果是 true，则当前 rule 的内容会被忽略。
 //
 //   closeParent:: ?bool
 //   When true, finding an element that matches this rule will close
 //   the current node.
 //
+//   @cn 如果是 true，则会在寻找匹配该 rule 的元素的时候关闭当前节点。
+//
 //   skip:: ?bool
 //   When true, ignore the node that matches this rule, but do parse
 //   its content.
 //
+//   @cn 如果是 true，则会忽略匹配当前规则的节点，但是会 parse 它的内容。
+//
 //   attrs:: ?Object
 //   Attributes for the node or mark created by this rule. When
 //   `getAttrs` is provided, it takes precedence.
+//
+//   @cn 由该 rule 创建的节点或者 mark 的 attributes。如果 `getAttrs` 存在的话，`getAttrs` 优先。
 //
 //   getAttrs:: ?(union<dom.Node, string>) → ?union<Object, false>
 //   A function used to compute the attributes for the node or mark
@@ -114,8 +166,13 @@ import {Mark} from "./mark"
 //   `false`, the rule won't match. When it returns null or undefined,
 //   that is interpreted as an empty/default set of attributes.
 //
+//   @cn 用来计算由当前 rule 新建的节点或者 mark 的 attributes。也可以用来描述进一步 DOM 元素或者行内样式匹配的话需要满足的条件。
+//   当它返回 `false`，则 rule 不会匹配。当它返回 null 或者 undefined，则被当成是一个空的/默认的 attributes 集合。
+//
 //   Called with a DOM Element for `tag` rules, and with a string (the
 //   style's value) for `style` rules.
+//
+//   @cn 对于 `tag` rule 来说该方法参数是一个 DOM 元素，对于 `style` rule 来说参数是一个字符串（即行内样式的值）
 //
 //   contentElement:: ?union<string, (dom.Node) → dom.Node>
 //   For `tag` rules that produce non-leaf nodes or marks, by default
@@ -124,6 +181,8 @@ import {Mark} from "./mark"
 //   a CSS selector string that the parser must use to find the actual
 //   content element, or a function that returns the actual content
 //   element to the parser.
+//
+//   @cn 对于 `tag` rule 来说，其产生一个非叶子节点的 node 或者 marks，默认情况下 DOM 元素的内容被 parsed 作为
 //
 //   getContent:: ?(dom.Node, schema: Schema) → Fragment
 //   Can be used to override the content of a matched node. When
