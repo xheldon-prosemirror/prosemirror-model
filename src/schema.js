@@ -501,7 +501,7 @@ export class MarkType {
 //   若该节点的 defining 为 false（默认），则其会被移除，但是 defining 为 true 的节点会保留，然后包裹住替换进来的内容。
 //   同样地，对于 _插入的_ 内容，那些有着 defining 为 true 的父级节点会被尽可能的保留。一般来说，非默认段落的文本块节点类型及 li 元素，defining 应该是 true。
 //
-//   @comment 最有一句话讲的是，例如，默认的 paragraph 中，文本块节点，粘贴的时候应该直接替换掉它的父节点，也即另一个文本块。
+//   @comment 最后一句话讲的是，例如，默认的 paragraph 中，文本块节点，粘贴的时候应该直接替换掉它的父节点，也即另一个文本块。
 //   但是对非默认 paragraph（即你自己定制的 paragraph）的话，在替换内容的时候，就需要保留该 非默认 paragraph 的一些属性，不能直接替换。同理 li 元素，
 //   因为首先选中 li 元素内容，然后粘贴内容是一个很常见的操作，用户的预期是将粘贴内容作为 li 的内容，而不是直接替换掉 li 而粘贴成 paragraph（或其他 block）。
 //
@@ -551,7 +551,7 @@ export class MarkType {
 //   @cn 当前节点相关的 DOM parser 信息，会被 [`DOMParser.fromSchema`](#model.DOMParser^fromSchema)
 //   使用以自动的衍生出一个 parser。Rule 中的 `node` 字段是隐式的（节点的名字会自动填充）。如果你在此处提供了自己的 parser，那你就不需要再在 schema 配置的时候提供 parser 了。
 //
-//  @comment  配置 Editor view 的时候可以配置一个个 Parser 和 Serializer，如果提供，则此处就不用写 parseDOM 了。
+//  @comment  配置 Editor view 的时候可以配置一个 Parser 和 Serializer，如果提供，则此处就不用写 parseDOM 了。
 //
 //   toDebugString:: ?(node: Node) -> string
 //   Defines the default way a node of this type should be serialized
@@ -573,7 +573,7 @@ export class MarkType {
 //
 //   @cn 当光标放到该 mark 的结尾处（或者如果该 mark 开始处同样是父级节点的开始处时，放到 mark 的开始处）时，该 marks 是否应该被激活。默认是 true/
 //
-//   @comment 「被激活」的意思是，可以通过 API 获取光标所在的 resolvedPos 信息以查到相关的 marks。
+//   @comment 「被激活」的意思是，可以通过 API 获取光标所在的 resolvedPos 信息以查到相关的 marks，对用户来说被激活意味着在该地方输入内容会带上相应的 marks。
 //
 //   excludes:: ?string
 //   Determines which other marks this mark can coexist with. Should
@@ -585,17 +585,32 @@ export class MarkType {
 //   use the value `"_"` to indicate that the mark excludes all
 //   marks in the schema.
 //
+//   @cn 决定当前 mark 是否能和其他 marks 共存。应该是由其他 marks 名或者 marks group 组成的以空格分隔的字符串。
+//   当一个 marks 被 [added](#model.Mark.addToSet) 到一个集合中时，所有的与此 marks 排斥（excludes）的 marks 将会被在添加过程中移除。
+//   如果当前集合包含任何排斥当前的新 mark 的 mark，但是该新 mark 却不排斥它，则当前新的 mark 不会被添加到集合中。你可以使用 `"_"` 来表明当前 marks
+//   排斥所有的 schema 中的其他 marks。
+//
+//   @comment 该段的主要意思是，第一：假设 A 、B 互斥，则 无论 A 添加到包含 B 的集合，还是 B 添加到 包含 A 的集合，已经在集合中的一方会被移除以添加新的 mark；
+//   第二：若假设 A 排斥 B，B 却不排斥 A，则将 B 添加到包含 A 的集合中去的时候，将不会被添加进去。
+//
 //   Defaults to only being exclusive with marks of the same type. You
 //   can set it to an empty string (or any string not containing the
 //   mark's own name) to allow multiple marks of a given type to
 //   coexist (as long as they have different attributes).
 //
+//   @cn 默认是相同类型的 marks 会互斥。你可以将其设置为一个空的字符串（或者任何不包含 mark 自身名字的字符串）
+//   以允许给定相同类型的多个 marks 共存（之哟啊他们有不同的 attributes）。
+//
 //   group:: ?string
 //   The group or space-separated groups to which this mark belongs.
+//
+//   @cn 当前 mark 所属的 一个 group 或者空格分隔的多个 groups。
 //
 //   spanning:: ?bool
 //   Determines whether marks of this type can span multiple adjacent
 //   nodes when serialized to DOM/HTML. Defaults to true.
+//
+//   @cn 决定当序列化为 DOM/HTML 的时候，当前类型的 marks 能否应用到相邻的多个节点上去。默认是 true。
 //
 //   toDOM:: ?(mark: Mark, inline: bool) → DOMOutputSpec
 //   Defines the default way marks of this type should be serialized
@@ -603,29 +618,46 @@ export class MarkType {
 //   where the marked content is placed. Otherwise, it is appended to
 //   the top node.
 //
+//   @cn 定义当前类型的 marks 序列化为 DOM/HTML 的默认方式。如果结果配置对象包含一个「洞」，则洞的位置就是 mark 内容所在的位置。否则，它会被附加到顶级节点之后。
+//
+//   @comment 「否则，它会被附加到顶级节点之后」字面意思吗？有待实验，本人貌似没有印象了。
+//
 //   parseDOM:: ?[ParseRule]
 //   Associates DOM parser information with this mark (see the
 //   corresponding [node spec field](#model.NodeSpec.parseDOM)). The
 //   `mark` field in the rules is implied.
+//
+//   @cn 当前 mark 的相关的 DOM parser 信息（具体请查看相应的 [node spec field](#model.NodeSpec.parseDOM)）。
+//   在 Rules 中的 `mark` 字段是隐式的。
 
 // AttributeSpec:: interface
 //
 // Used to [define](#model.NodeSpec.attrs) attributes on nodes or
 // marks.
 //
+// @cn 用来 [define](#model.NodeSpec.attrs) node 或者 marks 的 attributes。
+//
 //   default:: ?any
 //   The default value for this attribute, to use when no explicit
 //   value is provided. Attributes that have no default must be
 //   provided whenever a node or mark of a type that has them is
 //   created.
+//
+//   @cn 该 attribute 的默认值，当没有显式提供值的时候使用。如果 attributes 没有默认值，则必须在新建一个 node 或者 mark 的时候提供值。
+//
 
 // ::- A document schema. Holds [node](#model.NodeType) and [mark
 // type](#model.MarkType) objects for the nodes and marks that may
 // occur in conforming documents, and provides functionality for
 // creating and deserializing such documents.
+//
+// @cn 一个文档的 schema。对可能出现在文档中的 nodes 和 marks 提供相应的 [node type](#model.NodeType) 和 [mark type](#model.MarkType) 对象，
+// 以及提供相应创建和序列化这样一个文档的函数。
 export class Schema {
   // :: (SchemaSpec)
   // Construct a schema from a schema [specification](#model.SchemaSpec).
+  //
+  // @cn 构造一个 schema 从一个 schema [specification（配置对象）](#model.SchemaSpec)中。
   constructor(spec) {
     // :: SchemaSpec
     // The [spec](#model.SchemaSpec) on which the schema is based,
@@ -633,6 +665,9 @@ export class Schema {
     // properties are
     // [`OrderedMap`](https://github.com/marijnh/orderedmap) instances
     // (not raw objects).
+    //
+    // @cn 当前 schema 所基于的 [spec（配置对象）](#model.SchemaSpec)，其中的 `nodes` 和 `marks` 属性可以保证是
+    // [`OrderedMap`](https://github.com/marijnh/orderedmap) 的实例（不是原始对象）。
     this.spec = {}
     for (let prop in spec) this.spec[prop] = spec[prop]
     this.spec.nodes = OrderedMap.from(spec.nodes)
@@ -640,10 +675,14 @@ export class Schema {
 
     // :: Object<NodeType>
     // An object mapping the schema's node names to node type objects.
+    //
+    // @cn 一个 schema 中节点名和节点类型对象的键值对映射。
     this.nodes = NodeType.compile(this.spec.nodes, this)
 
     // :: Object<MarkType>
     // A map from mark names to mark type objects.
+    //
+    // @cn 一个 mark 名和 mark 类型对象的键值对映射。
     this.marks = MarkType.compile(this.spec.marks, this)
 
     let contentExprCache = Object.create(null)
@@ -669,12 +708,16 @@ export class Schema {
     // :: NodeType
     // The type of the [default top node](#model.SchemaSpec.topNode)
     // for this schema.
+    //
+    // @cn 当前 schema 的 [默认顶级节点](#model.SchemaSpec.topNode) 类型。
     this.topNodeType = this.nodes[this.spec.topNode || "doc"]
 
     // :: Object
     // An object for storing whatever values modules may want to
     // compute and cache per schema. (If you want to store something
     // in it, try to use property names unlikely to clash.)
+    //
+    // @cn 一个用于计算和缓存每个 schema 中的任何类型值的对象。（如果你想要在其上储存一些东西，要保证属性名不会冲突）
     this.cached = Object.create(null)
     this.cached.wrappings = Object.create(null)
   }
@@ -684,6 +727,9 @@ export class Schema {
   // `NodeType` instance. Attributes will be extended
   // with defaults, `content` may be a `Fragment`,
   // `null`, a `Node`, or an array of nodes.
+  //
+  // @cn 在 schema 中新建一个节点。`type` 参数可以是一个字符串或者一个 `NodeType` 的实例。Attributes 会被以默认值扩展，`content` 可能是一个 `Fragment`、
+  // `null`、`Node` 或者一个节点数组。
   node(type, attrs, content, marks) {
     if (typeof type == "string")
       type = this.nodeType(type)
@@ -698,6 +744,10 @@ export class Schema {
   // :: (string, ?[Mark]) → Node
   // Create a text node in the schema. Empty text nodes are not
   // allowed.
+  //
+  // @cn 在 schema 中新建一个文本节点。不允许创建空的文本节点。
+  //
+  // @comment 文本节点和文本块节点不同，注意区分。
   text(text, marks) {
     let type = this.nodes.text
     return new TextNode(type, type.defaultAttrs, text, Mark.setFrom(marks))
@@ -705,6 +755,8 @@ export class Schema {
 
   // :: (union<string, MarkType>, ?Object) → Mark
   // Create a mark with the given type and attributes.
+  //
+  // @cn 用给定的类型和 attributes 创建一个 mark。
   mark(type, attrs) {
     if (typeof type == "string") type = this.marks[type]
     return type.create(attrs)
@@ -713,6 +765,10 @@ export class Schema {
   // :: (Object) → Node
   // Deserialize a node from its JSON representation. This method is
   // bound.
+  //
+  // @cn 从一个 JSON 表达式中反序列化出一个节点。该方法 this 已经绑定当前对象。
+  //
+  // @comment JSON 表达式其实并不是 JavaScript 中通常意义上的 JSON 字符串，而是一个普通对象，它及它的键值都是 plain object。该对象由相应的 Node.toJSON 生成。
   nodeFromJSON(json) {
     return Node.fromJSON(this, json)
   }
@@ -720,6 +776,10 @@ export class Schema {
   // :: (Object) → Mark
   // Deserialize a mark from its JSON representation. This method is
   // bound.
+  //
+  // @cn 从一个 JSON 表达式中反序列化出一个 mark。该方法 this 已经绑定当前对象。
+  //
+  // @comment 该对象由相应的 Mark.toJSON 生成。
   markFromJSON(json) {
     return Mark.fromJSON(this, json)
   }
