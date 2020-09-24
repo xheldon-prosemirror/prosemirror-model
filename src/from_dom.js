@@ -182,12 +182,16 @@ import {Mark} from "./mark"
 //   content element, or a function that returns the actual content
 //   element to the parser.
 //
-//   @cn 对于 `tag` rule 来说，其产生一个非叶子节点的 node 或者 marks，默认情况下 DOM 元素的内容被 parsed 作为
+//   @cn 对于 `tag` rule 来说，其产生一个非叶子节点的 node 或者 marks，默认情况下 DOM 元素的内容被 parsed 作为该 mark 或者
+//   节点的内容。如果子节点在一个子孙节点中，则这个可能是一个 CSS 选择器字符串， parser 必须使用它以寻找实际的内容元素，或者是一个函数，
+//   为 parser 返回实际的内容元素。
 //
 //   getContent:: ?(dom.Node, schema: Schema) → Fragment
 //   Can be used to override the content of a matched node. When
 //   present, instead of parsing the node's child nodes, the result of
 //   this function is used.
+//
+//   @cn 如果设置了该方法，则会使用函数返回的结果来作为匹配节点的内容，而不是 parsing 节点的子节点。
 //
 //   preserveWhitespace:: ?union<bool, "full">
 //   Controls whether whitespace should be preserved when parsing the
@@ -195,21 +199,34 @@ import {Mark} from "./mark"
 //   be collapsed, `true` means that whitespace should be preserved
 //   but newlines normalized to spaces, and `"full"` means that
 //   newlines should also be preserved.
+//
+//   @cn 控制当 parsing 匹配元素的内容的时候，空白符是否应该保留。`false` 表示空白符应该不显示，
+//   `true` 表示空白符应该不显示但是换行符会被换成空格，`"full"` 表示换行符也应该被保留。
 
 // ::- A DOM parser represents a strategy for parsing DOM content into
 // a ProseMirror document conforming to a given schema. Its behavior
 // is defined by an array of [rules](#model.ParseRule).
+//
+// @cn 一个为了让 ProseMirror 文档符合给定 schema 的 Parser。它的行为由一个 [rules](#model.ParseRule) 数组定义。
 export class DOMParser {
   // :: (Schema, [ParseRule])
   // Create a parser that targets the given schema, using the given
   // parsing rules.
+  //
+  // @cn 新建一个针对给定 schema 的 parser，使用给定的 parsing rules。
   constructor(schema, rules) {
     // :: Schema
     // The schema into which the parser parses.
+    //
+    // @cn parser 所 parses 的 schema。
+    //
+    // @comment 解析器所解析的 schema。
     this.schema = schema
     // :: [ParseRule]
     // The set of [parse rules](#model.ParseRule) that the parser
     // uses, in order of precedence.
+    //
+    // @cn parser 所使用的 [parse rules](#model.ParseRule)，按顺序优先。
     this.rules = rules
     this.tags = []
     this.styles = []
@@ -229,6 +246,8 @@ export class DOMParser {
 
   // :: (dom.Node, ?ParseOptions) → Node
   // Parse a document from the content of a DOM node.
+  //
+  // @cn parse 一个 DOM 节点的内容成一个文档。
   parse(dom, options = {}) {
     let context = new ParseContext(this, options, false)
     context.addAll(dom, null, options.from, options.to)
@@ -242,6 +261,13 @@ export class DOMParser {
   // this one returns a slice that is open at the sides, meaning that
   // the schema constraints aren't applied to the start of nodes to
   // the left of the input and the end of nodes at the end.
+  //
+  // @cn parses 给定的 DOM 节点，与 [`parse`](#model.DOMParser.parse) 类似，接受与之相同的参数。
+  // 不过与 parse 方法产生一整个节点不同的是，这个方法返回一个在节点两侧打开的 slice，这意味着 schema
+  // 的约束不适用于输入节点左侧节点的开始位置和末尾节点的结束位置。
+  //
+  // @comment 这表示该方法可能产生一个不受 schema 约束的 node，只是该 node 由于 openStart 和 openEnd 的存在而适合 schema
+  // （被 open 剪切掉以适合 schema，但是整体不适合 schema）。
   parseSlice(dom, options = {}) {
     let context = new ParseContext(this, options, true)
     context.addAll(dom, null, options.from, options.to)
@@ -317,6 +343,9 @@ export class DOMParser {
   // Construct a DOM parser using the parsing rules listed in a
   // schema's [node specs](#model.NodeSpec.parseDOM), reordered by
   // [priority](#model.ParseRule.priority).
+  //
+  // @cn 用给定的 schema 中的 [node 配置对象](#model.NodeSpec.parseDOM) 中的 parsing rule 来构造一个 DOM parser，
+  // 被按 [优先级](#model.ParseRule.priority) 重新排序。
   static fromSchema(schema) {
     return schema.cached.domParser ||
       (schema.cached.domParser = new DOMParser(schema, DOMParser.schemaRules(schema)))
@@ -407,6 +436,8 @@ class NodeContext {
     }
   }
 }
+
+// TODO: 这一块的代码主要做 DOM parser 的，感觉非常核心，可以重点研究下，另外官方暂时没有暴露出来该对象和方法（用了「:」做注释）
 
 class ParseContext {
   // : (DOMParser, Object)
