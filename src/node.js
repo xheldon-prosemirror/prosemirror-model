@@ -24,7 +24,7 @@ const emptyAttrs = Object.create(null)
 // **Do not** directly mutate the properties of a `Node` object. See
 // [the guide](/docs/guide/#doc) for more information.
 //
-// @cn **不要** 直接修改 `Node` 对象的属性。查看 [中文指南](https://www.xheldon.com/prosemirror-guide-chinese.html) 的「Documents」一节，获取更多信息。
+// @cn **不要** 直接修改 `Node` 对象的属性。查看 [中文指南](https://xheldon.com/prosemirror-guide-chinese.html#documents)获取更多信息。
 export class Node {
   constructor(type, attrs, content, marks) {
     // :: NodeType
@@ -69,7 +69,7 @@ export class Node {
   // non-leaf nodes, it is the size of the content plus two (the start
   // and end token).
   //
-  // @cn 表示该节点的大小，由基于整数的 [indexing scheme](https://www.xheldon.com/prosemirror-guide-chinese.html) 决定。
+  // @cn 表示该节点的大小，由基于整数的 [indexing scheme](https://xheldon.com/prosemirror-guide-chinese.html#indexing) 决定。
   // 对于文本节点，它是字符数，对于其他叶子节点，是 1。对于非叶子节点，它是其内容的大小加上 2（开始和结束标签）。
   //
   // @comment indexing scheme 链接指向中文翻译指南，请搜索 Document 一节 下的 Indexing 一节。

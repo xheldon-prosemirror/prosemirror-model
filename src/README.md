@@ -23,8 +23,7 @@ Positions in a document can be represented as integer
 [offsets](/docs/guide/#doc.indexing). But you'll often want to use a
 more convenient representation.
 
-@cn 在文档中的位置可以表示为一个整数的 [offsets](/docs/guide/#doc.indexing)。不过你经常会想要使用一种更方便表达形式来使用位置信息。
-（offsets 这个链接指向的是原文的 indexing 一节，具体可以查看 [中文指南](https://www.xheldon.com/prosemirror-guide-chinese.html) 在其内搜索「Indexing」。）
+@cn 在文档中的位置可以表示为一个整数的 [offsets](https://xheldon.com/prosemirror-guide-chinese.html#indexing)。不过你经常会想要使用一种更方便表达形式来使用位置信息。
 
 @ResolvedPos
 @NodeRange
@@ -36,8 +35,7 @@ Every ProseMirror document conforms to a
 marks that it is made out of, along with the relations between those,
 such as which node may occur as a child node of which other nodes.
 
-@cn 每个 ProseMirror 文档都符合一个 [schema](/docs/guide/#schema) 约束，它描述了节点的集合和 marks，以及它们之间的关系，比如哪些节点可以作为其他节点的子节点等。
-(schema 这个链接指向的是原文的 Schemas 一节，具体可以查看 [中文指南](https://www.xheldon.com/prosemirror-guide-chinese.html) 在其内搜索「Schemas」。）
+@cn 每个 ProseMirror 文档都符合一个 [schema](https://xheldon.com/prosemirror-guide-chinese.html#schemas) 约束，它描述了节点的集合和 marks，以及它们之间的关系，比如哪些节点可以作为其他节点的子节点等。
 
 @Schema
 

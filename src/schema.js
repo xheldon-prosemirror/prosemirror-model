@@ -422,7 +422,7 @@ export class MarkType {
 //   guide](/docs/guide/#schema.content_expressions). When not given,
 //   the node does not allow any content.
 //
-//   @cn 就像在 [schema guide](https://www.xheldon.com/prosemirror-guide-chinese.html) 中描述的一样，为当前节点的内容表达式。
+//   @cn 就像在 [schema guide](https://xheldon.com/prosemirror-guide-chinese.html#content-expressions) 中描述的一样，为当前节点的内容表达式。
 //   如果没有给定，则该节点不允许任何内容。
 //
 //   @comment schema guide 链接指向中文翻译指南，请搜索 Schema 下的 Content Expressions 一节。
