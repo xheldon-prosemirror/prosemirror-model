@@ -1,7 +1,7 @@
 // DOMOutputSpec:: interface
 // A description of a DOM structure. Can be either a string, which is
 // interpreted as a text node, a DOM node, which is interpreted as
-// itself, or an array.
+// itself, a `{dom: Node, contentDOM: ?Node}` object, or an array.
 //
 // @cn 一个 DOM 结构的描述。既可以是一个字符串，用来表示一个文本节点，也可以是一个 DOM 节点，表示它自身，亦或者是一个数组。
 //
@@ -155,6 +155,8 @@ export class DOMSerializer {
       return {dom: doc.createTextNode(structure)}
     if (structure.nodeType != null)
       return {dom: structure}
+    if (structure.dom && structure.dom.nodeType != null)
+      return structure
     let tagName = structure[0], space = tagName.indexOf(" ")
     if (space > 0) {
       xmlNS = tagName.slice(0, space)

@@ -1,3 +1,63 @@
+## 1.14.1 (2021-04-26)
+
+### Bug fixes
+
+DOM parsing with `preserveWhitespace: "full"` will no longer ignore whitespace-only nodes.
+
+## 1.14.0 (2021-04-06)
+
+### Bug fixes
+
+`Node.check` will now error if a node has an invalid combination of marks.
+
+Don't leave carriage return characters in parsed DOM content, since they confuse Chrome's cursor motion.
+
+### New features
+
+`Fragment.textBetween` is now public.
+
+## 1.13.3 (2021-02-04)
+
+### Bug fixes
+
+Fix an issue where nested tags that match mark parser rules could cause the parser to apply marks in invalid places.
+
+## 1.13.2 (2021-02-04)
+
+### Bug fixes
+
+`MarkType.removeFromSet` now removes all instances of the mark, not just the first one.
+
+## 1.13.1 (2020-12-20)
+
+### Bug fixes
+
+Fix a bug where nested marks of the same type would be applied to the wrong node when parsing from DOM.
+
+## 1.13.0 (2020-12-11)
+
+### New features
+
+Parse rules can now have a `consuming: false` property which allows other rules to match their tag or style even when they apply.
+
+## 1.12.0 (2020-10-11)
+
+### New features
+
+The output of `toDOM` functions can now be a `{dom, contentDOM}` object specifying the precise parent and content DOM elements.
+
+## 1.11.2 (2020-09-12)
+
+### Bug fixes
+
+Fix issue where 1.11.1 uses an array method not available on Internet Explorer.
+
+## 1.11.1 (2020-09-11)
+
+### Bug fixes
+
+Fix an issue where an inner node's mark information could reset the same mark provided by an outer node in the DOM parser.
+
 ## 1.11.0 (2020-07-08)
 
 ### New features

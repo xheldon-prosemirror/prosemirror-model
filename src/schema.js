@@ -355,9 +355,10 @@ export class MarkType {
   //
   // @comment 看函数名，顾名思义就是在给定 marks 集合中移除当前 mark 类型的 marks。
   removeFromSet(set) {
-    for (var i = 0; i < set.length; i++)
-      if (set[i].type == this)
-        return set.slice(0, i).concat(set.slice(i + 1))
+    for (var i = 0; i < set.length; i++) if (set[i].type == this) {
+      set = set.slice(0, i).concat(set.slice(i + 1))
+      i--
+    }
     return set
   }
 

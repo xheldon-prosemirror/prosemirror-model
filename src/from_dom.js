@@ -82,9 +82,11 @@ import {Mark} from "./mark"
 //   A CSS property name to match. When given, this rule matches
 //   inline styles that list that property. May also have the form
 //   `"property=value"`, in which case the rule only matches if the
-//   propery's value exactly matches the given value. (For more
+//   property's value exactly matches the given value. (For more
 //   complicated filters, use [`getAttrs`](#model.ParseRule.getAttrs)
-//   and return false to indicate that the match failed.)
+//   and return false to indicate that the match failed.) Rules
+//   matching styles may only produce [marks](#model.ParseRule.mark),
+//   not nodes.
 //
 //   @cn 需要匹配的 CSS 属性名。如果给定的话，这个 rule 将会匹配包含该属性的行内样式。
 //   也可以是 `"property=value"` 的形式，这种情况下 property 的值完全符合给定值时 rule 才会匹配。
@@ -100,6 +102,15 @@ import {Mark} from "./mark"
 //   @cn 可以使用它来提升 schema 中 parse rule 的优先级顺序。更高优先级的更先被 parse。
 //   没有优先级设置的 rule 则被默认设置一个 50 的优先级。该属性只在 schema 中才有意义。
 //   而在直接构造一个 parser 的时候使用的是 rule 数组的顺序。
+//
+//   consuming:: ?boolean
+//   By default, when a rule matches an element or style, no further
+//   rules get a chance to match it. By setting this to `false`, you
+//   indicate that even when this rule matches, other rules that come
+//   after it should also run.
+//
+//   @cn 默认情况下，如果一个 rule 匹配了一个元素或者样式，那么就不会进一步的匹配接下来的 rule 了。
+//   而通过设置该参数为 `false`，你可以决定即使当一个 rule 匹配了，在该 rule 之后的 rule 也依然会运行一次。
 //
 //   context:: ?string
 //   When given, restricts this rule to only match when the current
@@ -274,8 +285,8 @@ export class DOMParser {
     return Slice.maxOpen(context.finish())
   }
 
-  matchTag(dom, context) {
-    for (let i = 0; i < this.tags.length; i++) {
+  matchTag(dom, context, after) {
+    for (let i = after ? this.tags.indexOf(after) + 1 : 0; i < this.tags.length; i++) {
       let rule = this.tags[i]
       if (matches(dom, rule.tag) &&
           (rule.namespace === undefined || dom.namespaceURI == rule.namespace) &&
@@ -290,8 +301,8 @@ export class DOMParser {
     }
   }
 
-  matchStyle(prop, value, context) {
-    for (let i = 0; i < this.styles.length; i++) {
+  matchStyle(prop, value, context, after) {
+    for (let i = after ? this.styles.indexOf(after) + 1 : 0; i < this.styles.length; i++) {
       let rule = this.styles[i]
       if (rule.style.indexOf(prop) != 0 ||
           rule.context && !context.matchesContext(rule.context) ||
@@ -390,6 +401,8 @@ class NodeContext {
     this.activeMarks = Mark.none
     // Marks that can't apply here, but will be used in children if possible
     this.pendingMarks = pendingMarks
+    // Nested Marks with same type
+    this.stashMarks = []
   }
 
   findWrapping(node) {
@@ -423,6 +436,11 @@ class NodeContext {
     if (!openEnd && this.match)
       content = content.append(this.match.fillBefore(Fragment.empty, true))
     return this.type ? this.type.create(this.attrs, content, this.marks) : content
+  }
+
+  popFromStashMark(mark) {
+    for (let i = this.stashMarks.length - 1; i >= 0; i--)
+      if (mark.eq(this.stashMarks[i])) return this.stashMarks.splice(i, 1)[0]
   }
 
   applyPending(nextType) {
@@ -486,7 +504,9 @@ class ParseContext {
   addTextNode(dom) {
     let value = dom.nodeValue
     let top = this.top
-    if ((top.type ? top.type.inlineContent : top.content.length && top.content[0].isInline) || /[^ \t\r\n\u000c]/.test(value)) {
+    if (top.options & OPT_PRESERVE_WS_FULL ||
+        (top.type ? top.type.inlineContent : top.content.length && top.content[0].isInline) ||
+        /[^ \t\r\n\u000c]/.test(value)) {
       if (!(top.options & OPT_PRESERVE_WS)) {
         value = value.replace(/[ \t\r\n\u000c]+/g, " ")
         // If this starts with whitespace, and there is no node before it, or
@@ -502,6 +522,8 @@ class ParseContext {
         }
       } else if (!(top.options & OPT_PRESERVE_WS_FULL)) {
         value = value.replace(/\r?\n|\r/g, " ")
+      } else {
+        value = value.replace(/\r\n?/g, "\n")
       }
       if (value) this.insertNode(this.parser.schema.text(value))
       this.findInText(dom)
@@ -510,15 +532,17 @@ class ParseContext {
     }
   }
 
-  // : (dom.Element)
+  // : (dom.Element, ?ParseRule)
   // Try to find a handler for the given tag and use that to parse. If
   // none is found, the element's content nodes are added directly.
-  addElement(dom) {
-    let name = dom.nodeName.toLowerCase()
+  addElement(dom, matchAfter) {
+    let name = dom.nodeName.toLowerCase(), ruleID
     if (listTags.hasOwnProperty(name) && this.parser.normalizeLists) normalizeList(dom)
-    let rule = (this.options.ruleFromNode && this.options.ruleFromNode(dom)) || this.parser.matchTag(dom, this)
+    let rule = (this.options.ruleFromNode && this.options.ruleFromNode(dom)) ||
+        (ruleID = this.parser.matchTag(dom, this, matchAfter))
     if (rule ? rule.ignore : ignoreTags.hasOwnProperty(name)) {
       this.findInside(dom)
+      this.ignoreFallback(dom)
     } else if (!rule || rule.skip || rule.closeParent) {
       if (rule && rule.closeParent) this.open = Math.max(0, this.open - 1)
       else if (rule && rule.skip.nodeType) dom = rule.skip
@@ -534,7 +558,7 @@ class ParseContext {
       if (sync) this.sync(top)
       this.needsBlock = oldNeedsBlock
     } else {
-      this.addElementByRule(dom, rule)
+      this.addElementByRule(dom, rule, rule.consuming === false ? ruleID : null)
     }
   }
 
@@ -544,16 +568,27 @@ class ParseContext {
       this.addTextNode(dom.ownerDocument.createTextNode("\n"))
   }
 
+  // Called for ignored nodes
+  ignoreFallback(dom) {
+    // Ignored BR nodes should at least create an inline context
+    if (dom.nodeName == "BR" && (!this.top.type || !this.top.type.inlineContent))
+      this.findPlace(this.parser.schema.text("-"))
+  }
+
   // Run any style parser associated with the node's styles. Either
   // return an array of marks, or null to indicate some of the styles
   // had a rule with `ignore` set.
   readStyles(styles) {
     let marks = Mark.none
-    for (let i = 0; i < styles.length; i += 2) {
-      let rule = this.parser.matchStyle(styles[i], styles[i + 1], this)
-      if (!rule) continue
-      if (rule.ignore) return null
-      marks = this.parser.schema.marks[rule.mark].create(rule.attrs).addToSet(marks)
+    style: for (let i = 0; i < styles.length; i += 2) {
+      for (let after = null;;) {
+        let rule = this.parser.matchStyle(styles[i], styles[i + 1], this, after)
+        if (!rule) continue style
+        if (rule.ignore) return null
+        marks = this.parser.schema.marks[rule.mark].create(rule.attrs).addToSet(marks)
+        if (rule.consuming === false) after = rule
+        else break
+      }
     }
     return marks
   }
@@ -562,7 +597,7 @@ class ParseContext {
   // Look up a handler for the given node. If none are found, return
   // false. Otherwise, apply it, use its return value to drive the way
   // the node's content is wrapped, and return true.
-  addElementByRule(dom, rule) {
+  addElementByRule(dom, rule, continueAfter) {
     let sync, nodeType, markType, mark
     if (rule.node) {
       nodeType = this.parser.schema.nodes[rule.node]
@@ -580,6 +615,8 @@ class ParseContext {
 
     if (nodeType && nodeType.isLeaf) {
       this.findInside(dom)
+    } else if (continueAfter) {
+      this.addElement(dom, continueAfter)
     } else if (rule.getContent) {
       this.findInside(dom)
       rule.getContent(dom, this.parser.schema).forEach(node => this.insertNode(node))
@@ -789,6 +826,8 @@ class ParseContext {
   }
 
   addPendingMark(mark) {
+    let found = findSameMarkInSet(mark, this.top.pendingMarks)
+    if (found) this.top.stashMarks.push(found)
     this.top.pendingMarks = mark.addToSet(this.top.pendingMarks)
   }
 
@@ -796,8 +835,14 @@ class ParseContext {
     for (let depth = this.open; depth >= 0; depth--) {
       let level = this.nodes[depth]
       let found = level.pendingMarks.lastIndexOf(mark)
-      if (found > -1) level.pendingMarks = mark.removeFromSet(level.pendingMarks)
-      else level.activeMarks = mark.removeFromSet(level.activeMarks)
+      if (found > -1) {
+        level.pendingMarks = mark.removeFromSet(level.pendingMarks)
+      } else {
+        level.activeMarks = mark.removeFromSet(level.activeMarks)
+        let stashMark = level.popFromStashMark(mark)
+        if (stashMark && level.type && level.type.allowsMarkType(stashMark.type))
+          level.activeMarks = stashMark.addToSet(level.activeMarks)
+      }
       if (level == upto) break
     }
   }
@@ -856,5 +901,11 @@ function markMayApply(markType, nodeType) {
       }
     }
     if (scan(parent.contentMatch)) return true
+  }
+}
+
+function findSameMarkInSet(mark, set) {
+  for (let i = 0; i < set.length; i++) {
+    if (mark.eq(set[i])) return set[i]
   }
 }
