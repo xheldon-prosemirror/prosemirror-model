@@ -8,6 +8,8 @@ import {DOMOutputSpec} from "./to_dom"
 import {ParseRule, TagParseRule} from "./from_dom"
 
 /// An object holding the attributes of a node.
+///
+/// @cn 保存节点属性的对象。
 export type Attrs = {readonly [attr: string]: any}
 
 // For node types where all attrs have a default value (or which don't

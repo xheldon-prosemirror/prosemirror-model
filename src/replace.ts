@@ -5,6 +5,8 @@ import {ResolvedPos} from "./resolvedpos"
 
 /// Error type raised by [`Node.replace`](#model.Node.replace) when
 /// given an invalid replacement.
+/// 
+/// @cn 一种调用 [`Node.replace`](#model.Node.replace) 方法时如果给定替换内容不可用的话会返回的错误类型。
 export class ReplaceError extends Error {}
 /*
 ReplaceError = function(this: any, message: string) {
@@ -21,6 +23,8 @@ ReplaceError.prototype.name = "ReplaceError"
 /// A slice represents a piece cut out of a larger document. It
 /// stores not only a fragment, but also the depth up to which nodes on
 /// both side are ‘open’ (cut through).
+/// 
+/// @cn 一个 slice 表示从大的文档中切出去的一小段片段。它不仅存储着 fragment，还有它两侧的节点「开放」的深度（切割节点产生的）。
 export class Slice {
   /// Create a slice. When specifying a non-zero open depth, you must
   /// make sure that there are nodes of at least that depth at the
@@ -28,20 +32,38 @@ export class Slice {
   /// empty paragraph node, `openStart` and `openEnd` can't be greater
   /// than 1.
   ///
+  /// @cn 新建一个 slice。当指定一个非零的开放深度的时候，你必须保证该 slice 的 fragment 至少在这个深度存在节点。
+  /// 例如，如果节点是一个空的段落节点，那么 `openStart` 和 `openEnd` 不能大于 1。
+  ///
   /// It is not necessary for the content of open nodes to conform to
   /// the schema's content constraints, though it should be a valid
   /// start/end/middle for such a node, depending on which sides are
   /// open.
+  /// 
+  /// @cn 开放节点的内容无需一定要符合 schema 的内容限制，因为对于开放节点来说，它的内容应该被在一个有效的开始/结束/中间位置开放，而这具体取决于节点的哪一侧被打开。
+  /// 
+  /// @comment 这句话举个例子比较好理解，如果 schema 内容限制 li 不能包含 p，但如果一个 slice 的 fragment 结构是 `<li><p>123</p><p>456</p></li>`，openStart 是 2，openEnd 也是 2
+  /// 那么该 slice 切割（打开/开放）出来的节点就会形如 `123</p><p>456`, 因此也是一个有效的 slice，可以被放到文档中需要的地方去（如另个一 p 标签内）。
   constructor(
     /// The slice's content.
+    /// 
+    /// @cn 该 slice 的内容片段。
+    /// 
+    /// @comment 该内容片段以 Fragment 的实例形式存在。
     readonly content: Fragment,
     /// The open depth at the start of the fragment.
+    /// 
+    /// @cn 开始位置的开放深度。
     readonly openStart: number,
     /// The open depth at the end.
+    /// 
+    /// @cn 结束位置的开放深度。
     readonly openEnd: number
   ) {}
 
   /// The size this slice would add when inserted into a document.
+  /// 
+  /// @cn 当将插入 slice 到文档中时，插入的内容大小。
   get size(): number {
     return this.content.size - this.openStart - this.openEnd
   }
@@ -58,6 +80,10 @@ export class Slice {
   }
 
   /// Tests whether this slice is equal to another slice.
+  /// 
+  /// @cn 测试当前 slice 是否与另一个 slice 相等。
+  /// 
+  /// @comment 相等比较是比较 slice 的内容，也即调用 fragment 的 eq 方法比较的，而且需要满足 openStart 相等和 openEnd 相等。
   eq(other: Slice): boolean {
     return this.content.eq(other.content) && this.openStart == other.openStart && this.openEnd == other.openEnd
   }
@@ -68,6 +94,8 @@ export class Slice {
   }
 
   /// Convert a slice to a JSON-serializable representation.
+  /// 
+  /// @cn 返回当前 slice 的 JSON 序列化的表示。
   toJSON(): any {
     if (!this.content.size) return null
     let json: any = {content: this.content.toJSON()}
@@ -77,6 +105,8 @@ export class Slice {
   }
 
   /// Deserialize a slice from its JSON representation.
+  /// 
+  /// @cn 从 slice 的 JSON 表示形式反序列化出一个 slice。
   static fromJSON(schema: Schema, json: any): Slice {
     if (!json) return Slice.empty
     let openStart = json.openStart || 0, openEnd = json.openEnd || 0
@@ -87,6 +117,8 @@ export class Slice {
 
   /// Create a slice from a fragment by taking the maximum possible
   /// open value on both side of the fragment.
+  /// 
+  /// @cn 从一个 fragment 新建一个 slice，该 slice 两侧的的打开值尽可能的大。
   static maxOpen(fragment: Fragment, openIsolating = true) {
     let openStart = 0, openEnd = 0
     for (let n = fragment.firstChild; n && !n.isLeaf && (openIsolating || !n.type.spec.isolating); n = n.firstChild) openStart++
@@ -95,6 +127,8 @@ export class Slice {
   }
 
   /// The empty slice.
+  /// 
+  /// @cn 空的 Slice。
   static empty = new Slice(Fragment.empty, 0, 0)
 }
 
