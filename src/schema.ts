@@ -1,22 +1,22 @@
 import OrderedMap from 'orderedmap'
 
-import {Node, TextNode} from "./node"
-import {Fragment} from "./fragment"
-import {Mark} from "./mark"
-import {ContentMatch} from "./content"
-import {DOMOutputSpec} from "./to_dom"
-import {ParseRule, TagParseRule} from "./from_dom"
+import { Node, TextNode } from './node'
+import { Fragment } from './fragment'
+import { Mark } from './mark'
+import { ContentMatch } from './content'
+import { DOMOutputSpec } from './to_dom'
+import { ParseRule, TagParseRule } from './from_dom'
 
 /// An object holding the attributes of a node.
 ///
 /// @cn 保存节点属性的对象。
-export type Attrs = {readonly [attr: string]: any}
+export type Attrs = { readonly [attr: string]: any }
 
 // For node types where all attrs have a default value (or which don't
 // have any attributes), build up a single reusable default attribute
 // object, and use it for all nodes that don't specify specific
 // attributes.
-function defaultAttrs(attrs: {[name: string]: Attribute}) {
+function defaultAttrs(attrs: { [name: string]: Attribute }) {
   let defaults = Object.create(null)
   for (let attrName in attrs) {
     let attr = attrs[attrName]
@@ -26,32 +26,48 @@ function defaultAttrs(attrs: {[name: string]: Attribute}) {
   return defaults
 }
 
-function computeAttrs(attrs: {[name: string]: Attribute}, value: Attrs | null) {
+function computeAttrs(
+  attrs: { [name: string]: Attribute },
+  value: Attrs | null
+) {
   let built = Object.create(null)
   for (let name in attrs) {
     let given = value && value[name]
     if (given === undefined) {
       let attr = attrs[name]
       if (attr.hasDefault) given = attr.default
-      else throw new RangeError("No value supplied for attribute " + name)
+      else throw new RangeError('No value supplied for attribute ' + name)
     }
     built[name] = given
   }
   return built
 }
 
-export function checkAttrs(attrs: {[name: string]: Attribute}, values: Attrs, type: string, name: string) {
+export function checkAttrs(
+  attrs: { [name: string]: Attribute },
+  values: Attrs,
+  type: string,
+  name: string
+) {
   for (let name in values)
-    if (!(name in attrs)) throw new RangeError(`Unsupported attribute ${name} for ${type} of type ${name}`)
+    if (!(name in attrs))
+      throw new RangeError(
+        `Unsupported attribute ${name} for ${type} of type ${name}`
+      )
   for (let name in attrs) {
     let attr = attrs[name]
     if (attr.validate) attr.validate(values[name])
   }
 }
 
-function initAttrs(typeName: string, attrs?: {[name: string]: AttributeSpec}) {
-  let result: {[name: string]: Attribute} = Object.create(null)
-  if (attrs) for (let name in attrs) result[name] = new Attribute(typeName, name, attrs[name])
+function initAttrs(
+  typeName: string,
+  attrs?: { [name: string]: AttributeSpec }
+) {
+  let result: { [name: string]: Attribute } = Object.create(null)
+  if (attrs)
+    for (let name in attrs)
+      result[name] = new Attribute(typeName, name, attrs[name])
   return result
 }
 
@@ -748,51 +764,71 @@ export interface MarkSpec {
   /// use the value `"_"` to indicate that the mark excludes all
   /// marks in the schema.
   ///
-  /// Defaults to only being exclusive with marks of the same type. You
-  /// can set it to an empty string (or any string not containing the
-  /// mark's own name) to allow multiple marks of a given type to
-  /// coexist (as long as they have different attributes).
-  //
-//   @cn 决定当前 mark 是否能和其他 marks 共存。应该是由其他 marks 名或者 marks group 组成的以空格分隔的字符串。
+  ///  @cn 决定当前 mark 是否能和其他 marks 共存。应该是由其他 marks 名或者 marks group 组成的以空格分隔的字符串。
   /// 当一个 marks 被 [added](#model.Mark.addToSet) 到一个集合中时，所有的与此 marks 排斥（excludes）的 marks 将会被在添加过程中移除。
   /// 如果当前集合包含任何排斥当前的新 mark 的 mark，但是该新 mark 却不排斥它，则当前新的 mark 不会被添加到集合中。你可以使用 `"_"` 来表明当前 marks
   /// 排斥所有的 schema 中的其他 marks。
   ///
   /// @comment 该段的主要意思是，第一：假设 A 、B 互斥，则 无论 A 添加到包含 B 的集合，还是 B 添加到 包含 A 的集合，已经在集合中的一方会被移除以添加新的 mark；
   /// 第二：若假设 A 排斥 B，B 却不排斥 A，则将 B 添加到包含 A 的集合中去的时候，将不会被添加进去。
+  ///
+  /// Defaults to only being exclusive with marks of the same type. You
+  /// can set it to an empty string (or any string not containing the
+  /// mark's own name) to allow multiple marks of a given type to
+  /// coexist (as long as they have different attributes).
+  ///
+  /// @cn 默认是相同类型的 marks 会互斥。你可以将其设置为一个空的字符串（或者任何不包含 mark 自身名字的字符串）
+  /// 以允许给定相同类型的多个 marks 共存（之哟啊他们有不同的 attributes）。
   excludes?: string
 
   /// The group or space-separated groups to which this mark belongs.
+  ///
+  /// @cn 当前 mark 所属的 一个 group 或者空格分隔的多个 groups。
   group?: string
 
   /// Determines whether marks of this type can span multiple adjacent
   /// nodes when serialized to DOM/HTML. Defaults to true.
+  ///
+  /// @cn 决定当序列化为 DOM/HTML 的时候，当前类型的 marks 能否应用到相邻的多个节点上去。默认是 true。
   spanning?: boolean
 
   /// Defines the default way marks of this type should be serialized
   /// to DOM/HTML. When the resulting spec contains a hole, that is
   /// where the marked content is placed. Otherwise, it is appended to
   /// the top node.
+  ///
+  /// @cn 定义当前类型的 marks 序列化为 DOM/HTML 的默认方式。如果结果配置对象包含一个「洞」，则洞的位置就是 mark 内容所在的位置。否则，它会被附加到顶级节点之后。
+  ///
+  /// @comment 「否则，它会被附加到顶级节点之后」字面意思吗？有待实验，本人貌似没有印象了。
   toDOM?: (mark: Mark, inline: boolean) => DOMOutputSpec
 
   /// Associates DOM parser information with this mark (see the
   /// corresponding [node spec field](#model.NodeSpec.parseDOM)). The
   /// `mark` field in the rules is implied.
+  ///
+  /// @cn 当前 mark 的相关的 DOM parser 信息（具体请查看相应的 [node spec field](#model.NodeSpec.parseDOM)）。
+  /// 在 Rules 中的 `mark` 字段是隐式的。
   parseDOM?: readonly ParseRule[]
 
   /// Mark specs can include additional properties that can be
   /// inspected through [`MarkType.spec`](#model.MarkType.spec) when
   /// working with the mark.
+  ///
+  /// @cn 在处理 mark 的时候，mark spec 可以包含额外的属性，这些属性可以通过 [`MarkType.spec`](#model.MarkType.spec) 访问。
   [key: string]: any
 }
 
 /// Used to [define](#model.NodeSpec.attrs) attributes on nodes or
 /// marks.
+///
+/// @cn 用来 [define](#model.NodeSpec.attrs) node 或者 marks 的 attributes。
 export interface AttributeSpec {
   /// The default value for this attribute, to use when no explicit
   /// value is provided. Attributes that have no default must be
   /// provided whenever a node or mark of a type that has them is
   /// created.
+  ///
+  ///   @cn 该 attribute 的默认值，当没有显式提供值的时候使用。如果 attributes 没有默认值，则必须在新建一个 node 或者 mark 的时候提供值。
   default?: any
   /// A function or type name used to validate values of this
   /// attribute. This will be used when deserializing the attribute
@@ -802,6 +838,10 @@ export interface AttributeSpec {
   /// `|`-separated string of primitive types (`"number"`, `"string"`,
   /// `"boolean"`, `"null"`, and `"undefined"`), and the library will
   /// raise an error when the value is not one of those types.
+  ///
+  /// @cn 一个函数或者类型名称。这个属性会在 JSON 反序列化该 attribute 的时候和zd运行 [`Node.check`](#model.Node.check) 的时候，被用来验证该 attribute 的值。
+  /// 当这个属性为函数的时候，当前值不是预期类型或者形状的时候，应该抛出异常。当该字符串的时候，它应该是一个 `|` 分隔的原始类型（`"number"`, `"string"`,
+  /// `"boolean"`, `"null"`, 和 `"undefined"`），当值不是这些类型之一的时候，库会抛出异常。
   validate?: string | ((value: any) => void)
 }
 
@@ -810,14 +850,22 @@ export interface AttributeSpec {
 /// occur in conforming documents, and provides functionality for
 /// creating and deserializing such documents.
 ///
+/// @cn 一个文档的 schema。对可能出现在文档中的 nodes 和 marks 提供相应的 [node type](#model.NodeType) 和 [mark type](#model.MarkType) 对象，
+/// 以及提供相应创建和序列化这样一个文档的函数。
+///
 /// When given, the type parameters provide the names of the nodes and
 /// marks in this schema.
+///
+/// @cn 当新建 Schema 的时候，泛型参数分别是 Nodes 和 Marks 名称的联合类型
 export class Schema<Nodes extends string = any, Marks extends string = any> {
   /// The [spec](#model.SchemaSpec) on which the schema is based,
   /// with the added guarantee that its `nodes` and `marks`
   /// properties are
   /// [`OrderedMap`](https://github.com/marijnh/orderedmap) instances
   /// (not raw objects).
+  ///
+  /// @cn 当前 schema 所基于的 [spec（配置对象）](#model.SchemaSpec)，其中的 `nodes` 和 `marks` 属性可以保证是
+  /// [`OrderedMap`](https://github.com/marijnh/orderedmap) 的实例（不是原始对象）。
   spec: {
     nodes: OrderedMap<NodeSpec>
     marks: OrderedMap<MarkSpec>
@@ -825,11 +873,15 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
   }
 
   /// An object mapping the schema's node names to node type objects.
+  ///
+  /// @cn 一个 schema 中节点名和节点类型对象的键值对映射。
   nodes: { readonly [name in Nodes]: NodeType } & {
     readonly [key: string]: NodeType
   }
 
   /// A map from mark names to mark type objects.
+  ///
+  /// @cn 一个 mark 名和 mark 类型对象的键值对映射。
   marks: { readonly [name in Marks]: MarkType } & {
     readonly [key: string]: MarkType
   }
@@ -837,6 +889,9 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
   /// The [linebreak
   /// replacement](#model.NodeSpec.linebreakReplacement) node defined
   /// in this schema, if any.
+  ///
+  /// @cn 如果有 NodeSpec 定义了 [linebreak
+  /// replacement](#model.NodeSpec.linebreakReplacement)， 这是其对应的 NodeType
   linebreakReplacement: NodeType | null = null
 
   /// Construct a schema from a schema [specification](#model.SchemaSpec).
@@ -899,17 +954,24 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
 
   /// The type of the [default top node](#model.SchemaSpec.topNode)
   /// for this schema.
+  ///
+  /// @cn 当前 schema 的 [默认顶级节点](#model.SchemaSpec.topNode) 类型。
   topNodeType: NodeType
 
   /// An object for storing whatever values modules may want to
   /// compute and cache per schema. (If you want to store something
   /// in it, try to use property names unlikely to clash.)
+  ///
+  /// @cn 一个用于计算和缓存每个 schema 中的任何类型值的对象。（如果你想要在其上储存一些东西，要保证属性名不会冲突）
   cached: { [key: string]: any } = Object.create(null)
 
   /// Create a node in this schema. The `type` may be a string or a
   /// `NodeType` instance. Attributes will be extended with defaults,
   /// `content` may be a `Fragment`, `null`, a `Node`, or an array of
   /// nodes.
+  ///
+  /// @cn 在 schema 中新建一个节点。`type` 参数可以是一个字符串或者一个 `NodeType` 的实例。Attributes 会被以默认值扩展，`content` 可能是一个 `Fragment`、
+  /// `null`、`Node` 或者一个节点数组。
   node(
     type: string | NodeType,
     attrs: Attrs | null = null,
@@ -929,12 +991,18 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
 
   /// Create a text node in the schema. Empty text nodes are not
   /// allowed.
+  ///
+  /// @cn 在 schema 中新建一个文本节点。不允许创建空的文本节点。
+  ///
+  /// @comment 文本节点和文本块节点不同，注意区分。
   text(text: string, marks?: readonly Mark[] | null): Node {
     let type = this.nodes.text
     return new TextNode(type, type.defaultAttrs, text, Mark.setFrom(marks))
   }
 
   /// Create a mark with the given type and attributes.
+  ///
+  /// @cn 用给定的类型和 attributes 创建一个 mark。
   mark(type: string | MarkType, attrs?: Attrs | null) {
     if (typeof type == 'string') type = this.marks[type]
     return type.create(attrs)
@@ -942,12 +1010,20 @@ export class Schema<Nodes extends string = any, Marks extends string = any> {
 
   /// Deserialize a node from its JSON representation. This method is
   /// bound.
+  ///
+  /// @cn 从一个 JSON 表达式中反序列化出一个节点。该方法 this 已经绑定当前对象。
+  ///
+  /// @comment JSON 表达式其实并不是 JavaScript 中通常意义上的 JSON 字符串，而是一个普通对象，它及它的键值都是 plain object。该对象由相应的 Node.toJSON 生成。
   nodeFromJSON(json: any): Node {
     return Node.fromJSON(this, json)
   }
 
   /// Deserialize a mark from its JSON representation. This method is
   /// bound.
+  ///
+  /// @cn 从一个 JSON 表达式中反序列化出一个 mark。该方法 this 已经绑定当前对象。
+  ///
+  /// @comment 该对象由相应的 Mark.toJSON 生成。
   markFromJSON(json: any): Mark {
     return Mark.fromJSON(this, json)
   }
