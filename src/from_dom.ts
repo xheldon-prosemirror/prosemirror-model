@@ -10,10 +10,15 @@ import {DOMNode} from "./dom"
 /// These are the options recognized by the
 /// [`parse`](#model.DOMParser.parse) and
 /// [`parseSlice`](#model.DOMParser.parseSlice) methods.
+///
+/// @cn 这是一个被 [`parse`](#model.DOMParser.parse) 和 [`parseSlice`](#model.DOMParser.parseSlice) 方法用到的参数配置对象。
 export interface ParseOptions {
   /// By default, whitespace is collapsed as per HTML's rules. Pass
   /// `true` to preserve whitespace, but normalize newlines to
   /// spaces, and `"full"` to preserve whitespace entirely.
+  //
+  /// @cn 默认情况下，根据 HTML 的规则，空白符会被折叠起来不显示。传递 `true` 表示保留空白符，但会将换行符表示为空格。
+  /// `"full"` 表示完全保留所有的空白符。
   preserveWhitespace?: boolean | "full"
 
   /// When given, the parser will, beside parsing the content,
@@ -21,27 +26,41 @@ export interface ParseOptions {
   /// will do so by writing to the objects, adding a `pos` property
   /// that holds the document position. DOM positions that are not
   /// in the parsed content will not be written to.
+  ///
+  /// @cn 如果设置了该参数，则 parser 除了 parsing 内容外，还将记录给定位置 DOM 在文档中相应的位置。
+  /// 它将通过写入对象，添加一个保存文档位置的 `pos` 属性来实现。不在 parsed 内容中的 DOM 的位置将不会被写入。
   findPositions?: {node: DOMNode, offset: number, pos?: number}[]
 
   /// The child node index to start parsing from.
+  ///
+  /// @cn 从开始 parsing 位置计算的子节点的索引。
   from?: number
 
   /// The child node index to stop parsing at.
+  ///
+  /// @cn 从结束 parsing 位置计算的子节点的索引。
   to?: number
 
   /// By default, the content is parsed into the schema's default
   /// [top node type](#model.Schema.topNodeType). You can pass this
   /// option to use the type and attributes from a different node
   /// as the top container.
+  ///
+  /// @cn 默认情况下，内容会被 parsed 到 schema 的默认 [顶级节点](#model.Schema.topNodeType) 中。
+  /// 你可以传递这个选项和 attributes 以使用一个不同的节点作为顶级容器。
   topNode?: Node
 
   /// Provide the starting content match that content parsed into the
   /// top node is matched against.
+  ///
+  /// @cn 提供与 parsed 到顶级节点的内容匹配的起始内容匹配。
   topMatch?: ContentMatch
 
   /// A set of additional nodes to count as
   /// [context](#model.ParseRule.context) when parsing, above the
   /// given [top node](#model.ParseOptions.topNode).
+  ///
+  /// @cn 在 parsing 的时候的一个额外的节点集合，其被算作给定 [top node](#model.ParseOptions.topNode) 之上的 [context](#model.ParseRule.context)。
   context?: ResolvedPos
 
   /// @internal
@@ -52,18 +71,27 @@ export interface ParseOptions {
 
 /// Fields that may be present in both [tag](#model.TagParseRule) and
 /// [style](#model.StyleParseRule) parse rules.
+///
+/// @cn 在 [tag](#model.TagParseRule) 和 [style](#model.StyleParseRule) parse rules 中可能出现的字段。
 export interface GenericParseRule {
   /// Can be used to change the order in which the parse rules in a
   /// schema are tried. Those with higher priority come first. Rules
   /// without a priority are counted as having priority 50. This
   /// property is only meaningful in a schema—when directly
   /// constructing a parser, the order of the rule array is used.
+  ///
+  /// @cn 可以用来改变 schema 中 parse rules 的顺序。具有更高优先级的 rules 会首先被尝试。
+  /// 没有 priority 的 rules 会被算作优先级为 50。这个属性只在 schema 中有效，当直接构造一个 parser 时，
+  /// 使用 rule 数组的顺序。
   priority?: number
 
   /// By default, when a rule matches an element or style, no further
   /// rules get a chance to match it. By setting this to `false`, you
   /// indicate that even when this rule matches, other rules that come
   /// after it should also run.
+  ///
+  /// @cn 默认情况下，如果一个 rule 匹配了一个元素或者样式，那么就不会进一步的匹配接下来的 rule 了。
+  /// 而通过设置该参数为 `false`，你可以决定即使当一个 rule 匹配了，在该 rule 之后的 rule 也依然会运行一次。
   consuming?: boolean
 
   /// When given, restricts this rule to only match when the current
@@ -77,30 +105,49 @@ export interface GenericParseRule {
   /// slash matches any sequence of ancestor nodes. To allow multiple
   /// different contexts, they can be separated by a pipe (`|`)
   /// character, as in `"blockquote/|list_item/"`.
+  ///
+  /// @cn 如果设置了该属性，则限制 rule 只匹配给定的上下文表达式，该上下文即为被 parsed 的内容所在的父级节点。
+  /// 应该包含一个或者多个节点名或者节点 group 名，用一个或者两个斜杠结尾。例如 `"paragraph/"` 表示只有当父级节点是段落的时候才会被匹配，
+  /// `"blockquote/paragraph/"` 限制只有在一个 blockquote 中的一个段落中才会被匹配，`"section//"` 表示匹配在一个 section 中的任何位置--一个双斜线表示匹配
+  /// 任何祖先节点序列。为了允许多个不同的上下文，它们可以用 `|` 分隔，比如 `"blockquote/|list_item/"`。
   context?: string
 
   /// The name of the mark type to wrap the matched content in.
+  ///
+  /// @cn 包裹匹配内容的 mark 类型的名字。
   mark?: string
 
   /// When true, ignore content that matches this rule.
+  ///
+  /// @cn 当给定时，表示匹配到的内容将被忽略。
   ignore?: boolean
 
   /// When true, finding an element that matches this rule will close
   /// the current node.
+  ///
+  /// @cn 如果是 true，则会在寻找匹配该 rule 的元素的时候关闭当前节点。
   closeParent?: boolean
 
   /// When true, ignore the node that matches this rule, but do parse
   /// its content.
+  ///
+  /// @cn 如果是 true，则会忽略匹配当前规则的节点，但是会 parse 它的内容。
   skip?: boolean
 
   /// Attributes for the node or mark created by this rule. When
   /// `getAttrs` is provided, it takes precedence.
+  ///
+  /// @cn 由该 rule 创建的节点或者 mark 的 attributes。如果 `getAttrs` 存在的话，`getAttrs` 优先。
   attrs?: Attrs
 }
 
 /// Parse rule targeting a DOM element.
+///
+/// @cn 一个针对 DOM 元素的 parse rule。
 export interface TagParseRule extends GenericParseRule {
   /// A CSS selector describing the kind of DOM elements to match.
+  ///
+  /// @cn 一个 CSS 选择器，描述了要匹配的 DOM 元素的类型。
   tag: string
 
   /// The namespace to match. Nodes are only matched when the
@@ -143,6 +190,8 @@ export interface TagParseRule extends GenericParseRule {
 }
 
 /// A parse rule targeting a style property.
+///
+/// @cn 一个针对 CSS 样式属性的 parse rule。
 export interface StyleParseRule extends GenericParseRule {
   /// A CSS property name to match. This rule will match inline styles
   /// that list that property. May also have the form
@@ -152,21 +201,31 @@ export interface StyleParseRule extends GenericParseRule {
   /// and return false to indicate that the match failed.) Rules
   /// matching styles may only produce [marks](#model.ParseRule.mark),
   /// not nodes.
+  ///
+  /// @cn 需要匹配的 CSS 属性名。如果给定的话，这个 rule 将会匹配包含该属性的行内样式。
+  /// 也可以是 `"property=value"` 的形式，这种情况下 property 的值完全符合给定值时 rule 才会匹配。
+  /// （对于更复杂的过滤方式，使用 [`getAttrs`](#model.ParseRule.getAttrs)，然后返回 false 表示匹配失败。）
   style: string
 
   /// Given to make TS see ParseRule as a tagged union @hide
   tag?: undefined
 
   /// Style rules can remove marks from the set of active marks.
+  ///
+  /// @cn style rules 可以移除 mark 集合中被激活的 mark。
   clearMark?: (mark: Mark) => boolean
 
   /// A function used to compute the attributes for the node or mark
   /// created by this rule. Called with the style's value.
+  ///
+  /// @cn 用来计算由当前 rule 新建的节点或者 mark 的 attributes。
   getAttrs?: (node: string) => Attrs | false | null
 }
 
 /// A value that describes how to parse a given DOM node or inline
 /// style as a ProseMirror node or mark.
+///
+/// @cn 一个描述如何解析给定 DOM 节点或者行内样式的 ProseMirror 节点或者 mark 的值。
 export type ParseRule = TagParseRule | StyleParseRule
 
 function isTagRule(rule: ParseRule): rule is TagParseRule { return (rule as TagParseRule).tag != null }
@@ -175,6 +234,8 @@ function isStyleRule(rule: ParseRule): rule is StyleParseRule { return (rule as 
 /// A DOM parser represents a strategy for parsing DOM content into a
 /// ProseMirror document conforming to a given schema. Its behavior is
 /// defined by an array of [rules](#model.ParseRule).
+///
+/// @cn 一个为了让 ProseMirror 文档符合给定 schema 的 Parser。它的行为由一个 [rules](#model.ParseRule) 数组定义。
 export class DOMParser {
   /// @internal
   tags: TagParseRule[] = []
@@ -187,11 +248,19 @@ export class DOMParser {
 
   /// Create a parser that targets the given schema, using the given
   /// parsing rules.
+  ///
+  /// @cn 新建一个针对给定 schema 的 parser，使用给定的 parsing rules。
   constructor(
     /// The schema into which the parser parses.
+    ///
+    /// @cn parser 所 parses 的 schema。
+    ///
+    /// @comment 解析器所解析的 schema。
     readonly schema: Schema,
     /// The set of [parse rules](#model.ParseRule) that the parser
     /// uses, in order of precedence.
+    ///
+    /// @cn parser 所使用的 [parse rules](#model.ParseRule)，按顺序优先。
     readonly rules: readonly ParseRule[]
   ) {
     let matchedStyles: string[] = this.matchedStyles = []
@@ -214,6 +283,8 @@ export class DOMParser {
   }
 
   /// Parse a document from the content of a DOM node.
+  ///
+  /// @cn 从一个 DOM 节点中解析一个文档。
   parse(dom: DOMNode, options: ParseOptions = {}): Node {
     let context = new ParseContext(this, options, false)
     context.addAll(dom, Mark.none, options.from, options.to)
@@ -226,6 +297,13 @@ export class DOMParser {
   /// this one returns a slice that is open at the sides, meaning that
   /// the schema constraints aren't applied to the start of nodes to
   /// the left of the input and the end of nodes at the end.
+  ///
+  /// @cn parses 给定的 DOM 节点，与 [`parse`](#model.DOMParser.parse) 类似，接受与之相同的参数。
+  /// 不过与 parse 方法产生一整个节点不同的是，这个方法返回一个在节点两侧打开的 slice，这意味着 schema
+  /// 的约束不适用于输入节点左侧节点的开始位置和末尾节点的结束位置。
+  ///
+  /// @comment 这表示该方法可能产生一个不受 schema 约束的 node，只是该 node 由于 openStart 和 openEnd 的存在而适合 schema
+  /// （被 open 剪切掉以适合 schema，但是整体不适合 schema）。
   parseSlice(dom: DOMNode, options: ParseOptions = {}) {
     let context = new ParseContext(this, options, true)
     context.addAll(dom, Mark.none, options.from, options.to)
@@ -304,6 +382,9 @@ export class DOMParser {
   /// Construct a DOM parser using the parsing rules listed in a
   /// schema's [node specs](#model.NodeSpec.parseDOM), reordered by
   /// [priority](#model.ParseRule.priority).
+  ///
+  /// @cn 用给定的 schema 中的 [node 配置对象](#model.NodeSpec.parseDOM) 中的 parsing rule 来构造一个 DOM parser，
+  /// 被按 [优先级](#model.ParseRule.priority) 重新排序。
   static fromSchema(schema: Schema) {
     return schema.cached.domParser as DOMParser ||
       (schema.cached.domParser = new DOMParser(schema, DOMParser.schemaRules(schema)))

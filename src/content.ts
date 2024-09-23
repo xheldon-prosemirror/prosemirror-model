@@ -7,6 +7,11 @@ type MatchEdge = {type: NodeType, next: ContentMatch}
 /// [content expression](#model.NodeSpec.content), and can be used to
 /// find out whether further content matches here, and whether a given
 /// position is a valid end of the node.
+///
+/// @cn 该类的实例表示一个节点类型的 [content expression（内容表达式）](#model.NodeSpec.content) 的匹配状态，
+/// 其可以用来寻找是否此处是否有更进一步的内容能够匹配到，以及判断一个位置是否是该节点的可用的结尾。
+///
+/// @comment 平时直接使用该类的机会不多，译者使用过的场景就一个查找当前 block 可插入的节点类型。
 export class ContentMatch {
   /// @internal
   readonly next: MatchEdge[] = []
@@ -16,6 +21,8 @@ export class ContentMatch {
   /// @internal
   constructor(
     /// True when this match state represents a valid end of the node.
+    ///
+    /// @cn 当匹配状态表示该节点有一个可用的结尾时为 true。
     readonly validEnd: boolean
   ) {}
 
@@ -32,6 +39,8 @@ export class ContentMatch {
 
   /// Match a node type, returning a match after that node if
   /// successful.
+  ///
+  /// @cn 匹配一个节点类型，如果成功则返回该 ContentMatch 匹配结果。
   matchType(type: NodeType): ContentMatch | null {
     for (let i = 0; i < this.next.length; i++)
       if (this.next[i].type == type) return this.next[i].next
@@ -40,6 +49,8 @@ export class ContentMatch {
 
   /// Try to match a fragment. Returns the resulting match when
   /// successful.
+  ///
+  /// @cn 尝试去匹配一个 fragment。如果成功则返回 ContentMatch 匹配结果。
   matchFragment(frag: Fragment, start = 0, end = frag.childCount): ContentMatch | null {
     let cur: ContentMatch | null = this
     for (let i = start; cur && i < end; i++)
@@ -54,6 +65,10 @@ export class ContentMatch {
 
   /// Get the first matching node type at this match position that can
   /// be generated.
+  ///
+  /// @cn 获取相应匹配位置的第一个可以被生成的匹配节点类型。
+  ///
+  /// @comment 「可以被生成的」指的是该位置不能是文本节点或者不能有必须存在的 attribute 才能被生成。
   get defaultType(): NodeType | null {
     for (let i = 0; i < this.next.length; i++) {
       let {type} = this.next[i]
@@ -76,6 +91,12 @@ export class ContentMatch {
   /// empty if nothing had to be inserted). When `toEnd` is true, only
   /// return a fragment if the resulting match goes to the end of the
   /// content expression.
+  ///
+  /// @cn 尝试匹配给定的 fragment，如果失败，则会查看是否可以通过在该 fragment 前面插入一些节点来使之匹配。
+  /// 如果插入节点后匹配成功，则会返回一个插入的节点组成的 fragment（如果没有需要插入的节点，则可能是空的）。
+  /// 当 `toEnd` 为 true 时，只有结果匹配到达了内容表达式的结尾之时，才会返回一个 fragment。
+  ///
+  /// @comment 否则返回 undefined。
   fillBefore(after: Fragment, toEnd = false, startIndex = 0): Fragment | null {
     let seen: ContentMatch[] = [this]
     function search(match: ContentMatch, types: readonly NodeType[]): Fragment | null {
@@ -101,6 +122,9 @@ export class ContentMatch {
   /// given type to appear at this position. The result may be empty
   /// (when it fits directly) and will be null when no such wrapping
   /// exists.
+  ///
+  /// @cn 寻找一个包裹给定节点的节点集合，该集合中的节点在包裹住给定类型的节点后才能出现在当前位置。
+  /// 集合的内容可能是空（如果给定类型节点直接就适合当前位置而无需包裹任何节点时），若不存在相应的包裹节点，则集合也可能是 null。
   findWrapping(target: NodeType): readonly NodeType[] | null {
     for (let i = 0; i < this.wrapCache.length; i += 2)
       if (this.wrapCache[i] == target) return this.wrapCache[i + 1] as (readonly NodeType[] | null)
@@ -134,12 +158,18 @@ export class ContentMatch {
 
   /// The number of outgoing edges this node has in the finite
   /// automaton that describes the content expression.
+  ///
+  /// @cn 在描述内容表达式的有限自动机中该节点拥有的外部边界的数量。
+  ///
+  /// @comment 没理解什么意思，需要看源码，我直译的，鼠标悬浮查看原始文档。
   get edgeCount() {
     return this.next.length
   }
 
   /// Get the _n_​th outgoing edge from this node in the finite
   /// automaton that describes the content expression.
+  ///
+  /// @cn 在描述内容表达式的有限自动机中获取该节点第 _n_ 个外部的边界。
   edge(n: number): MatchEdge {
     if (n >= this.next.length) throw new RangeError(`There's no ${n}th edge in this content match`)
     return this.next[n]
