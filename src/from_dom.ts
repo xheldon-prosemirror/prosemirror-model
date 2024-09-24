@@ -152,6 +152,8 @@ export interface TagParseRule extends GenericParseRule {
 
   /// The namespace to match. Nodes are only matched when the
   /// namespace matches or this property is null.
+  ///
+  /// @cn 需要匹配的命名空间。只有命名空间匹配之后或者为 null 表示没有命名空间，才会开始匹配节点。
   namespace?: string
 
   /// The name of the node type to create when this rule matches. Each
@@ -159,6 +161,10 @@ export interface TagParseRule extends GenericParseRule {
   /// (except when it appears in a [node](#model.NodeSpec.parseDOM) or
   /// [mark spec](#model.MarkSpec.parseDOM), in which case the `node`
   /// or `mark` property will be derived from its position).
+  ///
+  /// @cn 当 rule 匹配的时候，将要创建的节点类型的名字。仅对带有 `tag` 属性的 rules 可用，对样式 rule 无效。
+  /// 每个 rule 应该有 `node`、`mark`、`ignore` 属性的其中一个（除非是当 rule 出现在一个 [node](#model.NodeSpec.parseDOM) 或者
+  /// [mark spec](#model.MarkSpec.parseDOM) 中时，在这种情况下，`node` 或者 `mark` 属性将会从它的位置推断出来）。
   node?: string
 
   /// A function used to compute the attributes for the node or mark
@@ -166,6 +172,10 @@ export interface TagParseRule extends GenericParseRule {
   /// conditions the DOM element or style must match. When it returns
   /// `false`, the rule won't match. When it returns null or undefined,
   /// that is interpreted as an empty/default set of attributes.
+  ///
+  ///
+  /// @cn 用来计算由当前 rule 新建的节点或者 mark 的 attributes。也可以用来描述进一步 DOM 元素或者行内样式匹配的话需要满足的条件。
+  /// 当它返回 `false`，则 rule 不会匹配。当它返回 null 或者 undefined，则被当成是一个空的/默认的 attributes 集合。
   getAttrs?: (node: HTMLElement) => Attrs | false | null
 
   /// For rules that produce non-leaf nodes, by default the content of
@@ -174,11 +184,17 @@ export interface TagParseRule extends GenericParseRule {
   /// string that the parser must use to find the actual content
   /// element, or a function that returns the actual content element
   /// to the parser.
+  ///
+  /// @cn 对于 `tag` rule 来说，其产生一个非叶子节点的 node 或者 marks，默认情况下 DOM 元素的内容被 parsed 作为该 mark 或者
+  /// 节点的内容。如果子节点在一个子孙节点中，则这个可能是一个 CSS 选择器字符串， parser 必须使用它以寻找实际的内容元素，或者是一个函数，
+  /// 为 parser 返回实际的内容元素。
   contentElement?: string | HTMLElement | ((node: DOMNode) => HTMLElement)
 
   /// Can be used to override the content of a matched node. When
   /// present, instead of parsing the node's child nodes, the result of
   /// this function is used.
+  ///
+  ///   @cn 如果设置了该方法，则会使用函数返回的结果来作为匹配节点的内容，而不是 parsing 节点的子节点。
   getContent?: (node: DOMNode, schema: Schema) => Fragment
 
   /// Controls whether whitespace should be preserved when parsing the
@@ -186,6 +202,9 @@ export interface TagParseRule extends GenericParseRule {
   /// be collapsed, `true` means that whitespace should be preserved
   /// but newlines normalized to spaces, and `"full"` means that
   /// newlines should also be preserved.
+  ///
+  /// @cn 控制当 parsing 匹配元素的内容的时候，空白符是否应该保留。`false` 表示空白符应该不显示，
+  /// `true` 表示空白符应该不显示但是换行符会被换成空格，`"full"` 表示换行符也应该被保留。
   preserveWhitespace?: boolean | "full"
 }
 
